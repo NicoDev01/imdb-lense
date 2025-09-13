@@ -137,71 +137,28 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
     }
   }, [sortBy, sortOrder]);
 
-  // Enhanced matching function for OCR titles to TMDB results
-  const findBestMatch = useCallback((ocrTitle: string, candidates: any[]) => {
-    if (!candidates || candidates.length === 0) return null;
-
-    const ocrNormalized = ocrTitle.toLowerCase().trim();
-
-    // Find best match using multiple strategies
-    let bestMatch = null;
-    let bestScore = 0;
-
-    for (const candidate of candidates) {
-      const tmdbTitle = candidate.title?.toLowerCase().trim() || '';
-      let score = 0;
-
-      // Strategy 1: OCR title is contained in TMDB title (most common case)
-      if (tmdbTitle.includes(ocrNormalized)) {
-        score = 100;
-      }
-      // Strategy 2: TMDB title is contained in OCR title (less common)
-      else if (ocrNormalized.includes(tmdbTitle)) {
-        score = 80;
-      }
-      // Strategy 3: Fuzzy matching - count common words
-      else {
-        const ocrWords = ocrNormalized.split(/\s+/);
-        const tmdbWords = tmdbTitle.split(/\s+/);
-        const commonWords = ocrWords.filter(word =>
-          tmdbWords.some(tmdbWord =>
-            tmdbWord.includes(word) || word.includes(tmdbWord)
-          )
-        );
-        score = (commonWords.length / Math.max(ocrWords.length, tmdbWords.length)) * 60;
-      }
-
-      // Boost score for exact word matches
-      const exactWordMatches = ocrNormalized.split(/\s+/).filter(word =>
-        tmdbTitle.includes(word)
-      ).length;
-      score += exactWordMatches * 10;
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestMatch = candidate;
-      }
-    }
-
-    return bestScore >= 30 ? bestMatch : null; // Minimum threshold
-  }, []);
-
   // useMemo für teure Film-Matching Berechnungen (außerhalb der map!)
   const movieMatches = useMemo(() => {
     const matches: Record<string, any> = {};
     titles.forEach(title => {
-      matches[title] = findBestMatch(title, movieData || []);
+      matches[title] = movieData?.find(movie =>
+        movie.title.toLowerCase().includes(title.toLowerCase()) ||
+        title.toLowerCase().includes(movie.title.toLowerCase())
+      );
     });
     return matches;
-  }, [movieData, titles, findBestMatch]);
+  }, [movieData, titles]);
 
   const ratingMatches = useMemo(() => {
     const matches: Record<string, any> = {};
     titles.forEach(title => {
-      matches[title] = findBestMatch(title, ratingsData || []);
+      matches[title] = ratingsData?.find(movie =>
+        movie.title.toLowerCase().includes(title.toLowerCase()) ||
+        title.toLowerCase().includes(movie.title.toLowerCase())
+      );
     });
     return matches;
-  }, [ratingsData, titles, findBestMatch]);
+  }, [ratingsData, titles]);
 
   // Gefilterte und sortierte Titel (nach den Matches!)
   const filteredAndSortedTitles = useMemo(() => {

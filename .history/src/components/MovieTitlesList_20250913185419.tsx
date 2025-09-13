@@ -137,73 +137,7 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
     }
   }, [sortBy, sortOrder]);
 
-  // Enhanced matching function for OCR titles to TMDB results
-  const findBestMatch = useCallback((ocrTitle: string, candidates: any[]) => {
-    if (!candidates || candidates.length === 0) return null;
-
-    const ocrNormalized = ocrTitle.toLowerCase().trim();
-
-    // Find best match using multiple strategies
-    let bestMatch = null;
-    let bestScore = 0;
-
-    for (const candidate of candidates) {
-      const tmdbTitle = candidate.title?.toLowerCase().trim() || '';
-      let score = 0;
-
-      // Strategy 1: OCR title is contained in TMDB title (most common case)
-      if (tmdbTitle.includes(ocrNormalized)) {
-        score = 100;
-      }
-      // Strategy 2: TMDB title is contained in OCR title (less common)
-      else if (ocrNormalized.includes(tmdbTitle)) {
-        score = 80;
-      }
-      // Strategy 3: Fuzzy matching - count common words
-      else {
-        const ocrWords = ocrNormalized.split(/\s+/);
-        const tmdbWords = tmdbTitle.split(/\s+/);
-        const commonWords = ocrWords.filter(word =>
-          tmdbWords.some(tmdbWord =>
-            tmdbWord.includes(word) || word.includes(tmdbWord)
-          )
-        );
-        score = (commonWords.length / Math.max(ocrWords.length, tmdbWords.length)) * 60;
-      }
-
-      // Boost score for exact word matches
-      const exactWordMatches = ocrNormalized.split(/\s+/).filter(word =>
-        tmdbTitle.includes(word)
-      ).length;
-      score += exactWordMatches * 10;
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestMatch = candidate;
-      }
-    }
-
-    return bestScore >= 30 ? bestMatch : null; // Minimum threshold
-  }, []);
-
-  // useMemo für teure Film-Matching Berechnungen (außerhalb der map!)
-  const movieMatches = useMemo(() => {
-    const matches: Record<string, any> = {};
-    titles.forEach(title => {
-      matches[title] = findBestMatch(title, movieData || []);
-    });
-    return matches;
-  }, [movieData, titles, findBestMatch]);
-
-  const ratingMatches = useMemo(() => {
-    const matches: Record<string, any> = {};
-    titles.forEach(title => {
-      matches[title] = findBestMatch(title, ratingsData || []);
-    });
-    return matches;
-  }, [ratingsData, titles, findBestMatch]);
-
-  // Gefilterte und sortierte Titel (nach den Matches!)
+  // Gefilterte und sortierte Titel
   const filteredAndSortedTitles = useMemo(() => {
     // Zuerst filtern nach Suchbegriff
     let filtered = titles.filter(title =>
@@ -239,6 +173,29 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
 
     return filtered;
   }, [titles, deferredSearchTerm, sortBy, sortOrder, movieMatches, ratingMatches]);
+
+  // useMemo für teure Film-Matching Berechnungen (außerhalb der map!)
+  const movieMatches = useMemo(() => {
+    const matches: Record<string, any> = {};
+    titles.forEach(title => {
+      matches[title] = movieData?.find(movie =>
+        movie.title.toLowerCase().includes(title.toLowerCase()) ||
+        title.toLowerCase().includes(movie.title.toLowerCase())
+      );
+    });
+    return matches;
+  }, [movieData, titles]);
+
+  const ratingMatches = useMemo(() => {
+    const matches: Record<string, any> = {};
+    titles.forEach(title => {
+      matches[title] = ratingsData?.find(movie =>
+        movie.title.toLowerCase().includes(title.toLowerCase()) ||
+        title.toLowerCase().includes(movie.title.toLowerCase())
+      );
+    });
+    return matches;
+  }, [ratingsData, titles]);
 
   const getConfidenceColor = (confidence: 'high' | 'medium' | 'low') => {
     switch (confidence) {
@@ -301,90 +258,6 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
         </div>
       </div>
 
-      {/* Suchleiste und Steuerung */}
-      <div className="mb-4 space-y-3">
-        {/* Suchleiste */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Filme suchen..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-9"
-          />
-          {searchTerm && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSearchTerm('')}
-              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
-            >
-              ✕
-            </Button>
-          )}
-        </div>
-
-        {/* Sortier- und Refresh-Controls */}
-        <div className="flex items-center justify-between">
-          <div className="flex gap-1">
-            <Button
-              variant={sortBy === 'title' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => toggleSort('title')}
-              className="h-7 px-2 text-xs"
-            >
-              <ArrowUpDown className="w-3 h-3 mr-1" />
-              Titel
-              {sortBy === 'title' && (
-                sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
-              )}
-            </Button>
-
-            <Button
-              variant={sortBy === 'rating' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => toggleSort('rating')}
-              className="h-7 px-2 text-xs"
-            >
-              <Star className="w-3 h-3 mr-1" />
-              Rating
-              {sortBy === 'rating' && (
-                sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
-              )}
-            </Button>
-
-            <Button
-              variant={sortBy === 'hasImdb' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => toggleSort('hasImdb')}
-              className="h-7 px-2 text-xs"
-            >
-              IMDb
-              {sortBy === 'hasImdb' && (
-                sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
-              )}
-            </Button>
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            className="h-7 px-2 text-xs"
-          >
-            <RefreshCw className="w-3 h-3 mr-1" />
-            Refresh
-          </Button>
-        </div>
-
-        {/* Suchergebnisse Info */}
-        {deferredSearchTerm && (
-          <div className="text-xs text-muted-foreground">
-            {filteredAndSortedTitles.length} von {titles.length} Filmen gefunden
-          </div>
-        )}
-      </div>
-
       {/* Error Banner - kompakter */}
       {(hasImdbError || hasRatingsError) && (
         <div className="mb-3 p-2 rounded bg-destructive/5 border border-destructive/20">
@@ -394,7 +267,7 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
 
       {/* Film Liste - mit Skeleton Loading */}
       <div className="space-y-2">
-        {filteredAndSortedTitles.map((title, index) => {
+        {titles.map((title, index) => {
           // Verwende die vorberechneten Matches
           const movieInfo = movieMatches[title];
           const ratingInfo = ratingMatches[title];
