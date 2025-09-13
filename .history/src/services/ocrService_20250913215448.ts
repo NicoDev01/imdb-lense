@@ -85,10 +85,9 @@ export const extractTextFromImage = async (imageUrl: string): Promise<string[]> 
     // Create the prompt for movie title extraction
     const prompt = `Analysiere dieses Bild und extrahiere alle sichtbaren Filmtitel.
     Gib nur die Filmtitel zurück, einen pro Zeile.
-    Entferne Jahreszahlen in Klammern aus den Titeln (z.B. "Film (2025)" wird zu "Film").
     Ignoriere alle anderen Texte wie Schauspielernamen, Regisseure, Genres, etc.
     Wenn mehrere Filme auf dem Bild sind, liste jeden Titel separat auf.
-    Antworte nur mit den bereinigten Titeln, keine zusätzlichen Erklärungen.`;
+    Antworte nur mit den Titeln, keine zusätzlichen Erklärungen.`;
 
     // Prepare the image part
     const imagePart = {
@@ -188,11 +187,7 @@ function parseGeminiResponse(response: string): string[] {
 export const cleanMovieTitle = (title: string): string => {
   // Clean up movie title text
   return title
-    // Remove year in parentheses (e.g., "Movie (2025)" -> "Movie")
-    .replace(/\s*\(\d{4}\)\s*$/, '')
-    // Remove other unwanted characters but keep spaces, hyphens, and colons
     .replace(/[^\w\s\-:]/g, ' ')
-    // Normalize whitespace
     .replace(/\s+/g, ' ')
     .trim();
 };

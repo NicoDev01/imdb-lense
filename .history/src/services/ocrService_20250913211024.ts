@@ -1,0 +1,136 @@
+import { pipeline, env } from '@huggingface/transformers';
+
+// Configure transformers.js
+env.allowLocalModels = false;
+env.useBrowserCache = true;
+
+let ocrPipeline: any = null;
+
+export const initializeOCR = async () => {
+  if (ocrPipeline) return ocrPipeline;
+
+  try {
+    console.log("Initializing OCR pipeline...");
+    // Try better OCR model for movie titles
+    ocrPipeline = await pipeline(
+      "image-to-text",
+      "Xenova/trocr-large-printed",
+      {
+        device: "webgpu",
+        dtype: "fp32"
+      }
+    );
+    console.log("OCR pipeline initialized successfully with trocr-large-printed");
+    return ocrPipeline;
+  } catch (error) {
+    console.error("WebGPU failed, trying CPU fallback:", error);
+    try {
+      // CPU fallback with better model
+      ocrPipeline = await pipeline(
+        "image-to-text",
+        "Xenova/trocr-large-printed",
+        { device: "cpu" }
+      );
+      console.log("CPU OCR model loaded successfully with trocr-large-printed");
+      return ocrPipeline;
+    } catch (fallbackError) {
+      console.error("Large model failed, trying base model:", fallbackError);
+      try {
+        // Ultimate fallback to base model
+        ocrPipeline = await pipeline(
+          "image-to-text",
+          "Xenova/trocr-base-printed",
+          { device: "cpu" }
+        );
+        console.log("Base OCR model loaded as final fallback");
+        return ocrPipeline;
+      } catch (finalError) {
+        console.error("All OCR models failed:", finalError);
+        throw finalError;
+      }
+    }
+  }
+};
+
+export const extractTextFromImage = async (imageUrl: string): Promise<string[]> => {
+  try {
+    if (!ocrPipeline) {
+      console.log("Initializing OCR pipeline...");
+      await initializeOCR();
+    }
+
+    console.log("Starting text extraction from image...");
+    console.log("Image URL:", imageUrl.substring(0, 50) + "...");
+    
+    // Process the image multiple times for better results
+    const results = [];
+    
+    try {
+      console.log("Processing image with OCR...");
+      const result = await ocrPipeline(imageUrl, {
+        max_new_tokens: 50,
+        do_sample: false,
+        num_beams: 1,
+      });
+      
+      console.log("OCR Result:", result);
+      results.push(result);
+    } catch (ocrError) {
+      console.error("OCR processing failed:", ocrError);
+      return [];
+    }
+    
+    // Extract and clean text from all results
+    const allTitles = [];
+    
+    for (const result of results) {
+      if (result && result.generated_text) {
+        console.log("Generated text found:", result.generated_text);
+        
+        const rawText = result.generated_text;
+        
+        // Try multiple splitting strategies
+        const splitVariants = [
+          rawText.split(/\s+/), // Split by whitespace
+          rawText.split(/[,;|\/\\]+/), // Split by punctuation
+          rawText.split(/\n/), // Split by newlines
+          [rawText.trim()] // Use whole text
+        ];
+        
+        for (const variant of splitVariants) {
+          console.log("Processing variant:", variant);
+
+          const cleanTitles = variant
+            .map((text: string) => text.trim())
+            .filter((text: string) => {
+              const isValid = text.length >= 2 && text.length <= 100; // More lenient length check
+              if (!isValid) {
+                console.log(`Filtered out "${text}" - length: ${text.length}`);
+              }
+              return isValid;
+            })
+            .filter((text: string) => {
+              const isOnlyNumbers = /^\d+(\.\d+)?$/.test(text); // Allow decimal numbers
+              if (isOnlyNumbers) {
+                console.log(`Filtered out "${text}" - only numbers`);
+              }
+              return !isOnlyNumbers;
+            })
+            .map((text: string) => cleanMovieTitle(text))
+            .filter((text: string) => {
+              const isValidAfterClean = text.length >= 2;
+              if (!isValidAfterClean) {
+                console.log(`Filtered out after cleaning "${text}"`);
+              }
+              return isValidAfterClean;
+            });
+
+          console.log("Clean titles from this variant:", cleanTitles);
+          allTitles.push(...cleanTitles);
+export const cleanMovieTitle = (title: string): string => {
+  // Clean up movie title text
+  return title
+    .replace(/[^\w\s\-:]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Film } from 'lucide-react';
-import { initializeGemini } from '@/services/ocrService';
+import { initializeOCR } from '@/services/ocrService';
 
 interface LoadingScreenProps {
   onReady: () => void;
@@ -13,7 +13,7 @@ export const LoadingScreen = ({ onReady }: LoadingScreenProps) => {
     const initApp = async () => {
       try {
         setLoadingText('Lade OCR Modell...');
-        await initializeGemini();
+        await initializeOCR();
         setLoadingText('Fast fertig...');
         
         // Small delay for smooth transition

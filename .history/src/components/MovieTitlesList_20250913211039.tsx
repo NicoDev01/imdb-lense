@@ -331,41 +331,6 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
         </Button>
       </Card>
     );
-  }
-
-  return (
-    <Card className="bg-gradient-card shadow-card border-border p-4">
-      {/* Header - kompakter */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Film className="w-4 h-4 text-primary" />
-          <h3 className="text-lg font-semibold">Filme</h3>
-          <Badge variant="secondary" className="text-xs">
-            {titles.length}
-          </Badge>
-        </div>
-        <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={copyAllTitles}
-            className="h-7 px-2 text-xs hover:bg-secondary"
-          >
-            <Copy className="w-3 h-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClear}
-            className="h-7 px-2 text-xs hover:bg-destructive/10 text-destructive"
-          >
-            <Trash2 className="w-3 h-3" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Suchleiste und Steuerung */}
-      <div className="mb-4 space-y-3">
         {/* Suchleiste */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />

@@ -3,7 +3,7 @@ import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { CameraIcon, Loader2Icon, ZapIcon, ZapOffIcon } from 'lucide-react';
+import { CameraIcon, Loader2Icon } from 'lucide-react';
 import { extractTextFromImage } from '@/services/ocrService';
 
 interface CameraCaptureProps {
@@ -21,35 +21,19 @@ export const CameraCapture = ({ onTitlesExtracted }: CameraCaptureProps) => {
   const capturePhoto = async () => {
     try {
       setIsCapturing(true);
-
+      
       const image = await Camera.getPhoto({
-        quality: continuousMode ? 85 : 90, // Slightly lower quality for faster processing in continuous mode
+        quality: 90,
         allowEditing: false,
         resultType: CameraResultType.Base64,
         source: CameraSource.Camera,
         correctOrientation: true,
-        width: continuousMode ? 1920 : undefined, // Lower resolution for faster processing
-        height: continuousMode ? 1080 : undefined,
       });
 
       if (image.base64String) {
         const imageUrl = `data:image/jpeg;base64,${image.base64String}`;
         setCapturedImage(imageUrl);
-        setPhotoCount(prev => prev + 1);
-
-        // Clear previous image after 2 seconds in continuous mode for smooth flow
-        if (continuousMode) {
-          setTimeout(() => setCapturedImage(null), 2000);
-        }
-
         await processImage(imageUrl);
-
-        // Auto-trigger next capture in continuous mode after successful processing
-        if (continuousMode && !isProcessing) {
-          setTimeout(() => {
-            if (continuousMode) capturePhoto();
-          }, 500); // Small delay for smooth UX
-        }
       }
     } catch (error) {
       console.error('Error capturing photo:', error);
@@ -107,11 +91,6 @@ export const CameraCapture = ({ onTitlesExtracted }: CameraCaptureProps) => {
           <p className="text-muted-foreground">
             Fotografiere Filmcover um Titel zu erkennen
           </p>
-          {photoCount > 0 && (
-            <p className="text-sm text-primary font-medium mt-2">
-              📸 {photoCount} Foto{photoCount !== 1 ? 's' : ''} aufgenommen
-            </p>
-          )}
         </div>
 
         {capturedImage && (
@@ -125,45 +104,24 @@ export const CameraCapture = ({ onTitlesExtracted }: CameraCaptureProps) => {
           </div>
         )}
 
-        <div className="space-y-3">
-          <Button
-            onClick={capturePhoto}
-            disabled={isCapturing || isProcessing}
-            size="lg"
-            className="bg-gradient-primary hover:shadow-glow transition-all duration-300 transform hover:scale-105"
-          >
-            {isCapturing || isProcessing ? (
-              <>
-                <Loader2Icon className="w-5 h-5 mr-2 animate-spin" />
-                {isCapturing ? 'Fotografiere...' : 'Verarbeite...'}
-              </>
-            ) : (
-              <>
-                <CameraIcon className="w-5 h-5 mr-2" />
-                {continuousMode ? 'Schnell-Scan aktiv' : 'Foto aufnehmen'}
-              </>
-            )}
-          </Button>
-
-          <Button
-            onClick={() => setContinuousMode(!continuousMode)}
-            variant="outline"
-            size="sm"
-            className="w-full"
-          >
-            {continuousMode ? (
-              <>
-                <ZapOffIcon className="w-4 h-4 mr-2" />
-                Normal-Modus
-              </>
-            ) : (
-              <>
-                <ZapIcon className="w-4 h-4 mr-2" />
-                Schnell-Scan Modus
-              </>
-            )}
-          </Button>
-        </div>
+        <Button
+          onClick={capturePhoto}
+          disabled={isCapturing || isProcessing}
+          size="lg"
+          className="bg-gradient-primary hover:shadow-glow transition-all duration-300 transform hover:scale-105"
+        >
+          {isCapturing || isProcessing ? (
+            <>
+              <Loader2Icon className="w-5 h-5 mr-2 animate-spin" />
+              {isCapturing ? 'Fotografiere...' : 'Verarbeite...'}
+            </>
+          ) : (
+            <>
+              <CameraIcon className="w-5 h-5 mr-2" />
+              Foto aufnehmen
+            </>
+          )}
+        </Button>
       </div>
     </Card>
   );

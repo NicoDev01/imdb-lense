@@ -13,7 +13,7 @@ export const LoadingScreen = ({ onReady }: LoadingScreenProps) => {
     const initApp = async () => {
       try {
         setLoadingText('Lade OCR Modell...');
-        await initializeGemini();
+        await initializeOCR();
         setLoadingText('Fast fertig...');
         
         // Small delay for smooth transition

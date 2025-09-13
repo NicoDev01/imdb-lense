@@ -3,7 +3,7 @@ import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { CameraIcon, Loader2Icon, ZapIcon, ZapOffIcon } from 'lucide-react';
+import { CameraIcon, Loader2Icon } from 'lucide-react';
 import { extractTextFromImage } from '@/services/ocrService';
 
 interface CameraCaptureProps {
@@ -28,8 +28,9 @@ export const CameraCapture = ({ onTitlesExtracted }: CameraCaptureProps) => {
         resultType: CameraResultType.Base64,
         source: CameraSource.Camera,
         correctOrientation: true,
-        width: continuousMode ? 1920 : undefined, // Lower resolution for faster processing
-        height: continuousMode ? 1080 : undefined,
+        width: continuousMode ? 1920 : 2448, // Lower resolution for faster processing
+        height: continuousMode ? 1080 : 3264,
+        preserveAspectRatio: true,
       });
 
       if (image.base64String) {
@@ -107,11 +108,6 @@ export const CameraCapture = ({ onTitlesExtracted }: CameraCaptureProps) => {
           <p className="text-muted-foreground">
             Fotografiere Filmcover um Titel zu erkennen
           </p>
-          {photoCount > 0 && (
-            <p className="text-sm text-primary font-medium mt-2">
-              📸 {photoCount} Foto{photoCount !== 1 ? 's' : ''} aufgenommen
-            </p>
-          )}
         </div>
 
         {capturedImage && (
@@ -125,45 +121,24 @@ export const CameraCapture = ({ onTitlesExtracted }: CameraCaptureProps) => {
           </div>
         )}
 
-        <div className="space-y-3">
-          <Button
-            onClick={capturePhoto}
-            disabled={isCapturing || isProcessing}
-            size="lg"
-            className="bg-gradient-primary hover:shadow-glow transition-all duration-300 transform hover:scale-105"
-          >
-            {isCapturing || isProcessing ? (
-              <>
-                <Loader2Icon className="w-5 h-5 mr-2 animate-spin" />
-                {isCapturing ? 'Fotografiere...' : 'Verarbeite...'}
-              </>
-            ) : (
-              <>
-                <CameraIcon className="w-5 h-5 mr-2" />
-                {continuousMode ? 'Schnell-Scan aktiv' : 'Foto aufnehmen'}
-              </>
-            )}
-          </Button>
-
-          <Button
-            onClick={() => setContinuousMode(!continuousMode)}
-            variant="outline"
-            size="sm"
-            className="w-full"
-          >
-            {continuousMode ? (
-              <>
-                <ZapOffIcon className="w-4 h-4 mr-2" />
-                Normal-Modus
-              </>
-            ) : (
-              <>
-                <ZapIcon className="w-4 h-4 mr-2" />
-                Schnell-Scan Modus
-              </>
-            )}
-          </Button>
-        </div>
+        <Button
+          onClick={capturePhoto}
+          disabled={isCapturing || isProcessing}
+          size="lg"
+          className="bg-gradient-primary hover:shadow-glow transition-all duration-300 transform hover:scale-105"
+        >
+          {isCapturing || isProcessing ? (
+            <>
+              <Loader2Icon className="w-5 h-5 mr-2 animate-spin" />
+              {isCapturing ? 'Fotografiere...' : 'Verarbeite...'}
+            </>
+          ) : (
+            <>
+              <CameraIcon className="w-5 h-5 mr-2" />
+              Foto aufnehmen
+            </>
+          )}
+        </Button>
       </div>
     </Card>
   );
