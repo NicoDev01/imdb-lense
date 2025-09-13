@@ -95,24 +95,6 @@ function createSearchVariations(query: string): string[] {
   }
 
   return [...new Set(variations)]; // Remove duplicates
-}
-
-// Generate query variations for better matching
-function generateQueryVariations(query: string): string[] {
-  const normalized = normalizeText(query);
-  const variations = [normalized];
-
-  // Add version with different punctuation patterns
-  variations.push(normalized.replace(/\s+/g, ', ')); // "title, subtitle"
-  variations.push(normalized.replace(/\s+/g, ' - ')); // "title - subtitle"
-  variations.push(normalized.replace(/\s+/g, ': ')); // "title: subtitle"
-
-  // Add version without common prefixes/suffixes
-  const withoutPrefix = normalized.replace(/^(the|a|an)\s+/i, '');
-  if (withoutPrefix !== normalized) {
-    variations.push(withoutPrefix);
-  }
-
   return [...new Set(variations)]; // Remove duplicates
 }
 
@@ -380,9 +362,7 @@ export async function getImdbIdForTitle(
   options: TMDBSearchOptions = {}
 ): Promise<MovieWithImdbId | null> {
   const normalizedTitle = normalizeText(title);
-  const searchVariations = createSearchVariations(title);
-  const queryVariations = generateQueryVariations(title); // Keep for fallback
-  const allQueries = [...new Set([...searchVariations, ...queryVariations])];
+  const queryVariations = generateQueryVariations(title);
   const { language = 'de-DE', year } = options;
 
   // Language fallback: de-DE → en-US
@@ -397,8 +377,8 @@ export async function getImdbIdForTitle(
     ];
 
     for (const searchType of searchTypes) {
-      // Try all search variations (preserving Umlaute first, then normalized)
-      for (const query of allQueries) {
+      // Try all query variations
+      for (const query of queryVariations) {
         try {
           let candidates: Candidate[] = [];
 

@@ -376,6 +376,77 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
           <Star className="w-3 h-3 mr-1" />
           {sortBy === 'rating' ? 'Sortieren aus' : 'Nach Rating'}
         </Button>
+          {searchTerm && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+            >
+              ✕
+            </Button>
+          )}
+        </div>
+
+        {/* Sortier- und Refresh-Controls */}
+        <div className="flex items-center justify-between">
+          <div className="flex gap-1">
+            <Button
+              variant={sortBy === 'title' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => toggleSort('title')}
+              className="h-7 px-2 text-xs"
+            >
+              <ArrowUpDown className="w-3 h-3 mr-1" />
+              Titel
+              {sortBy === 'title' && (
+                sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+              )}
+            </Button>
+
+            <Button
+              variant={sortBy === 'rating' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => toggleSort('rating')}
+              className="h-7 px-2 text-xs"
+            >
+              <Star className="w-3 h-3 mr-1" />
+              Rating
+              {sortBy === 'rating' && (
+                sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+              )}
+            </Button>
+
+            <Button
+              variant={sortBy === 'hasImdb' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => toggleSort('hasImdb')}
+              className="h-7 px-2 text-xs"
+            >
+              IMDb
+              {sortBy === 'hasImdb' && (
+                sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+              )}
+            </Button>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            className="h-7 px-2 text-xs"
+          >
+            <RefreshCw className="w-3 h-3 mr-1" />
+            Refresh
+          </Button>
+        </div>
+
+        {/* Suchergebnisse Info */}
+        {deferredSearchTerm && (
+          <div className="text-xs text-muted-foreground">
+            {filteredAndSortedTitles.length} von {titles.length} Filmen gefunden
+          </div>
+        )}
       </div>
 
       {/* Error Banner - kompakter */}

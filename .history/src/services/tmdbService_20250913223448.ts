@@ -380,9 +380,7 @@ export async function getImdbIdForTitle(
   options: TMDBSearchOptions = {}
 ): Promise<MovieWithImdbId | null> {
   const normalizedTitle = normalizeText(title);
-  const searchVariations = createSearchVariations(title);
-  const queryVariations = generateQueryVariations(title); // Keep for fallback
-  const allQueries = [...new Set([...searchVariations, ...queryVariations])];
+  const queryVariations = generateQueryVariations(title);
   const { language = 'de-DE', year } = options;
 
   // Language fallback: de-DE → en-US
@@ -397,8 +395,8 @@ export async function getImdbIdForTitle(
     ];
 
     for (const searchType of searchTypes) {
-      // Try all search variations (preserving Umlaute first, then normalized)
-      for (const query of allQueries) {
+      // Try all query variations
+      for (const query of queryVariations) {
         try {
           let candidates: Candidate[] = [];
 

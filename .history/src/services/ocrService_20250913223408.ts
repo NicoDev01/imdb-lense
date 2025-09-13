@@ -192,9 +192,8 @@ export const cleanMovieTitle = (title: string): string => {
   return title
     // Remove year in parentheses (e.g., "Movie (2025)" -> "Movie")
     .replace(/\s*\(\d{4}\)\s*$/, '')
-    // Remove unwanted characters but keep letters (including Umlaute), numbers, spaces, hyphens, and colons
-    // \p{L} matches any Unicode letter, \p{N} matches any Unicode number
-    .replace(/[^\p{L}\p{N}\s\-:]/gu, ' ')
+    // Remove other unwanted characters but keep spaces, hyphens, and colons
+    .replace(/[^\w\s\-:]/g, ' ')
     // Normalize whitespace
     .replace(/\s+/g, ' ')
     .trim();

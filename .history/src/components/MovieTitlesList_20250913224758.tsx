@@ -336,20 +336,30 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
 
   return (
     <Card className="bg-gradient-card shadow-card border-border p-4">
-      {/* Minimaler Header */}
-      <div className="flex items-center justify-between mb-2">
+      {/* Header - ultra-kompakt */}
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
+          <Film className="w-4 h-4 text-primary" />
+          <h3 className="text-base font-semibold">Filme</h3>
           <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-            {titles.length} Film{titles.length !== 1 ? 'e' : ''}
+            {titles.length}
           </Badge>
         </div>
         <div className="flex gap-1">
           <Button
             variant="ghost"
             size="sm"
+            onClick={() => setShowImdbIds(!showImdbIds)}
+            className="h-6 px-2 text-xs"
+            title={showImdbIds ? "IMDb-IDs ausblenden" : "IMDb-IDs anzeigen"}
+          >
+            ID
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={copyAllTitles}
             className="h-6 px-2 text-xs"
-            title="Alle Titel kopieren"
           >
             <Copy className="w-3 h-3" />
           </Button>
@@ -358,24 +368,94 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
             size="sm"
             onClick={onClear}
             className="h-6 px-2 text-xs text-destructive hover:bg-destructive/10"
-            title="Alle löschen"
           >
             <Trash2 className="w-3 h-3" />
           </Button>
         </div>
       </div>
 
-      {/* Minimal Controls */}
-      <div className="mb-3 flex justify-end gap-1">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setSortBy(sortBy === 'rating' ? 'none' : 'rating')}
-          className="h-7 px-2 text-xs"
-        >
-          <Star className="w-3 h-3 mr-1" />
-          {sortBy === 'rating' ? 'Sortieren aus' : 'Nach Rating'}
-        </Button>
+      {/* Suchleiste und Steuerung */}
+      <div className="mb-4 space-y-3">
+        {/* Suchleiste */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Filme suchen..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 h-9"
+          />
+          {searchTerm && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+            >
+              ✕
+            </Button>
+          )}
+        </div>
+
+        {/* Sortier- und Refresh-Controls */}
+        <div className="flex items-center justify-between">
+          <div className="flex gap-1">
+            <Button
+              variant={sortBy === 'title' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => toggleSort('title')}
+              className="h-7 px-2 text-xs"
+            >
+              <ArrowUpDown className="w-3 h-3 mr-1" />
+              Titel
+              {sortBy === 'title' && (
+                sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+              )}
+            </Button>
+
+            <Button
+              variant={sortBy === 'rating' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => toggleSort('rating')}
+              className="h-7 px-2 text-xs"
+            >
+              <Star className="w-3 h-3 mr-1" />
+              Rating
+              {sortBy === 'rating' && (
+                sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+              )}
+            </Button>
+
+            <Button
+              variant={sortBy === 'hasImdb' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => toggleSort('hasImdb')}
+              className="h-7 px-2 text-xs"
+            >
+              IMDb
+              {sortBy === 'hasImdb' && (
+                sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+              )}
+            </Button>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            className="h-7 px-2 text-xs"
+          >
+            <RefreshCw className="w-3 h-3 mr-1" />
+            Refresh
+          </Button>
+        </div>
+
+        {/* Suchergebnisse Info */}
+        {deferredSearchTerm && (
+          <div className="text-xs text-muted-foreground">
+            {filteredAndSortedTitles.length} von {titles.length} Filmen gefunden
+          </div>
+        )}
       </div>
 
       {/* Error Banner - kompakter */}
@@ -395,9 +475,7 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
           return (
             <div
               key={index}
-              className={`group flex items-center justify-between p-2 rounded-md hover:bg-secondary/50 transition-colors border border-transparent hover:border-secondary/30 ${
-                ratingInfo?.rating >= 7 ? 'bg-green-50/30 dark:bg-green-900/10' : ''
-              }`}
+              className="group flex items-center justify-between p-2 rounded-md hover:bg-secondary/50 transition-colors border border-transparent hover:border-secondary/30"
             >
               {/* Titel - prominent */}
               <div className="flex items-center gap-2 flex-1 min-w-0">

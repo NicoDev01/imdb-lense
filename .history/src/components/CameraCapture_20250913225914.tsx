@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Button } from '@/components/ui/button';
-
+import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { CameraIcon, Loader2Icon } from 'lucide-react';
 import { extractTextFromImage } from '@/services/ocrService';

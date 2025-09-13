@@ -336,11 +336,13 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
 
   return (
     <Card className="bg-gradient-card shadow-card border-border p-4">
-      {/* Minimaler Header */}
-      <div className="flex items-center justify-between mb-2">
+      {/* Header - kompakter */}
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-            {titles.length} Film{titles.length !== 1 ? 'e' : ''}
+          <Film className="w-4 h-4 text-primary" />
+          <h3 className="text-lg font-semibold">Filme</h3>
+          <Badge variant="secondary" className="text-xs">
+            {titles.length}
           </Badge>
         </div>
         <div className="flex gap-1">
@@ -348,8 +350,7 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
             variant="ghost"
             size="sm"
             onClick={copyAllTitles}
-            className="h-6 px-2 text-xs"
-            title="Alle Titel kopieren"
+            className="h-7 px-2 text-xs hover:bg-secondary"
           >
             <Copy className="w-3 h-3" />
           </Button>
@@ -357,25 +358,95 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
             variant="ghost"
             size="sm"
             onClick={onClear}
-            className="h-6 px-2 text-xs text-destructive hover:bg-destructive/10"
-            title="Alle löschen"
+            className="h-7 px-2 text-xs hover:bg-destructive/10 text-destructive"
           >
             <Trash2 className="w-3 h-3" />
           </Button>
         </div>
       </div>
 
-      {/* Minimal Controls */}
-      <div className="mb-3 flex justify-end gap-1">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setSortBy(sortBy === 'rating' ? 'none' : 'rating')}
-          className="h-7 px-2 text-xs"
-        >
-          <Star className="w-3 h-3 mr-1" />
-          {sortBy === 'rating' ? 'Sortieren aus' : 'Nach Rating'}
-        </Button>
+      {/* Suchleiste und Steuerung */}
+      <div className="mb-4 space-y-3">
+        {/* Suchleiste */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Filme suchen..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 h-9"
+          />
+          {searchTerm && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
+            >
+              ✕
+            </Button>
+          )}
+        </div>
+
+        {/* Sortier- und Refresh-Controls */}
+        <div className="flex items-center justify-between">
+          <div className="flex gap-1">
+            <Button
+              variant={sortBy === 'title' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => toggleSort('title')}
+              className="h-7 px-2 text-xs"
+            >
+              <ArrowUpDown className="w-3 h-3 mr-1" />
+              Titel
+              {sortBy === 'title' && (
+                sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+              )}
+            </Button>
+
+            <Button
+              variant={sortBy === 'rating' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => toggleSort('rating')}
+              className="h-7 px-2 text-xs"
+            >
+              <Star className="w-3 h-3 mr-1" />
+              Rating
+              {sortBy === 'rating' && (
+                sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+              )}
+            </Button>
+
+            <Button
+              variant={sortBy === 'hasImdb' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => toggleSort('hasImdb')}
+              className="h-7 px-2 text-xs"
+            >
+              IMDb
+              {sortBy === 'hasImdb' && (
+                sortOrder === 'asc' ? <ArrowUp className="w-3 h-3 ml-1" /> : <ArrowDown className="w-3 h-3 ml-1" />
+              )}
+            </Button>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            className="h-7 px-2 text-xs"
+          >
+            <RefreshCw className="w-3 h-3 mr-1" />
+            Refresh
+          </Button>
+        </div>
+
+        {/* Suchergebnisse Info */}
+        {deferredSearchTerm && (
+          <div className="text-xs text-muted-foreground">
+            {filteredAndSortedTitles.length} von {titles.length} Filmen gefunden
+          </div>
+        )}
       </div>
 
       {/* Error Banner - kompakter */}
@@ -385,72 +456,80 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
         </div>
       )}
 
-      {/* Film Liste - ultra-kompakt */}
-      <div className="space-y-1">
+      {/* Film Liste - mit Skeleton Loading */}
+      <div className="space-y-2">
         {filteredAndSortedTitles.map((title, index) => {
+          // Verwende die vorberechneten Matches
           const movieInfo = movieMatches[title];
           const ratingInfo = ratingMatches[title];
+
           const isLoading = isLoadingImdb || isLoadingRatings;
+          const hasData = movieInfo?.imdbId || ratingInfo?.rating;
+
+          // Skeleton Loading für bessere UX
+          if (isLoading && !hasData) {
+            return <MovieSkeleton key={index} />;
+          }
 
           return (
             <div
               key={index}
-              className={`group flex items-center justify-between p-2 rounded-md hover:bg-secondary/50 transition-colors border border-transparent hover:border-secondary/30 ${
-                ratingInfo?.rating >= 7 ? 'bg-green-50/30 dark:bg-green-900/10' : ''
-              }`}
+              className="group p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-all duration-200 border border-transparent hover:border-secondary"
             >
-              {/* Titel - prominent */}
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <h4 className="font-medium text-sm truncate flex-1">{title}</h4>
+              {/* Titel + Loading in einer Zeile */}
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium text-sm flex-1 truncate pr-2">{title}</h4>
                 {isLoading && (
                   <Loader2 className="w-3 h-3 animate-spin text-muted-foreground flex-shrink-0" />
                 )}
               </div>
 
-              {/* IMDb-ID - nur wenn aktiviert */}
-              {showImdbIds && movieInfo?.imdbId && (
-                <code className="bg-background/30 px-1.5 py-0.5 rounded text-xs font-mono text-muted-foreground border flex-shrink-0 mr-2">
-                  {movieInfo.imdbId}
-                </code>
-              )}
+              {/* IMDb-ID und Rating inline */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {movieInfo?.imdbId ? (
+                    <>
+                      <code className="bg-background/50 px-1.5 py-0.5 rounded text-xs font-mono text-muted-foreground border">
+                        {movieInfo.imdbId}
+                      </code>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openImdbPage(movieInfo.imdbId!)}
+                        className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/10"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </Button>
+                    </>
+                  ) : hasData ? (
+                    <span className="text-xs text-muted-foreground">Kein IMDb-Eintrag</span>
+                  ) : null}
+                </div>
 
-              {/* Rating - immer prominent */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {ratingInfo?.rating ? (
-                  <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-1 rounded-full">
-                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                    <span className="font-bold text-sm text-yellow-700 dark:text-yellow-300">
-                      {ratingInfo.rating}
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-xs text-muted-foreground w-8 text-center">—</span>
-                )}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {ratingInfo?.rating ? (
+                    <div className="flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 px-2 py-0.5 rounded-full">
+                      <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                      <span className="font-bold text-sm text-yellow-700 dark:text-yellow-300">
+                        {ratingInfo.rating}
+                      </span>
+                    </div>
+                  ) : hasData ? (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  ) : null}
 
-                {/* IMDb Link - nur bei Hover */}
-                {movieInfo?.imdbId && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => openImdbPage(movieInfo.imdbId!)}
-                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/10"
+                    onClick={() => copyToClipboard(
+                      `${title}${movieInfo?.imdbId ? ` (${movieInfo.imdbId})` : ''}${ratingInfo?.rating ? ` ★${ratingInfo.rating}` : ''}`,
+                      `"${title}" kopiert`
+                    )}
+                    className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/10"
                   >
-                    <ExternalLink className="w-3 h-3" />
+                    <Copy className="w-3 h-3" />
                   </Button>
-                )}
-
-                {/* Copy Button - nur bei Hover */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => copyToClipboard(
-                    `${title}${movieInfo?.imdbId ? ` (${movieInfo.imdbId})` : ''}${ratingInfo?.rating ? ` ★${ratingInfo.rating}` : ''}`,
-                    `"${title}" kopiert`
-                  )}
-                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/10"
-                >
-                  <Copy className="w-3 h-3" />
-                </Button>
+                </div>
               </div>
             </div>
           );

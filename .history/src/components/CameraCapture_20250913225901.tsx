@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Button } from '@/components/ui/button';
-
+import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { CameraIcon, Loader2Icon } from 'lucide-react';
+import { CameraIcon, Loader2Icon, ZapIcon, ZapOffIcon } from 'lucide-react';
 import { extractTextFromImage } from '@/services/ocrService';
 
 interface CameraCaptureProps {
@@ -30,6 +30,23 @@ export const CameraCapture = ({ onTitlesExtracted }: CameraCaptureProps) => {
       if (image.base64String) {
         const imageUrl = `data:image/jpeg;base64,${image.base64String}`;
         await processImage(imageUrl);
+        const imageUrl = `data:image/jpeg;base64,${image.base64String}`;
+        setCapturedImage(imageUrl);
+        setPhotoCount(prev => prev + 1);
+
+        // Clear previous image after 2 seconds in continuous mode for smooth flow
+        if (continuousMode) {
+          setTimeout(() => setCapturedImage(null), 2000);
+        }
+
+        await processImage(imageUrl);
+
+        // Auto-trigger next capture in continuous mode after successful processing
+        if (continuousMode && !isProcessing) {
+          setTimeout(() => {
+            if (continuousMode) capturePhoto();
+          }, 500); // Small delay for smooth UX
+        }
       }
     } catch (error) {
       console.error('Error capturing photo:', error);
