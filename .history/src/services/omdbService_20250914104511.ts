@@ -93,11 +93,11 @@ export async function getImdbRatingByImdbId(imdbId: string): Promise<MovieRating
     const rating = extractImdbRating(movieData);
     const votes = extractImdbVotes(movieData);
 
-    const result: MovieRating = {
+    const result = {
       imdbId,
       rating,
       votes,
-      source: 'omdb' as const
+      source: 'omdb'
     };
 
     console.log('✅ OMDB: Extracted rating for', imdbId, ':', result);

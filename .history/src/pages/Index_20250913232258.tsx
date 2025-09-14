@@ -31,18 +31,11 @@ const Index = () => {
       setIsCapturing(true);
 
       const image = await Camera.getPhoto({
-        quality: 85, // Leicht niedriger für schnellere Verarbeitung
+        quality: 90,
         allowEditing: false,
         resultType: CameraResultType.Base64,
         source: CameraSource.Camera,
         correctOrientation: true,
-        presentationStyle: 'fullscreen',
-        saveToGallery: false,
-        width: 1920, // Konsistente Auflösung für schnellere OCR
-        height: 1080,
-        promptLabelHeader: 'Film Scanner',
-        promptLabelCancel: 'Abbrechen',
-        promptLabelPhoto: 'Foto aufnehmen',
       });
 
       if (image.base64String) {
@@ -103,23 +96,21 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Film Liste - nimmt verfügbaren Platz ein und ist scrollable */}
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full p-4 pb-20 overflow-y-auto">
-          <div className="max-w-md mx-auto">
-            <MovieTitlesList titles={movieTitles} onClear={clearTitles} />
-          </div>
+      {/* Film Liste - nimmt verfügbaren Platz ein */}
+      <div className="flex-1 p-4 pb-24">
+        <div className="max-w-md mx-auto">
+          <MovieTitlesList titles={movieTitles} onClear={clearTitles} />
         </div>
       </div>
 
-      {/* Sticky Foto Button - schmaler und pillenförmig */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe-area-inset-bottom pointer-events-none">
-        <div className="flex justify-center">
+      {/* Sticky Foto Button - am unteren Rand */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe-area-inset-bottom">
+        <div className="max-w-md mx-auto">
           <Button
             onClick={capturePhoto}
             disabled={isCapturing || isProcessing}
             size="lg"
-            className="pointer-events-auto max-w-xs bg-gradient-primary hover:shadow-glow transition-all duration-300 transform hover:scale-105 shadow-lg rounded-full px-8 py-3"
+            className="w-full bg-gradient-primary hover:shadow-glow transition-all duration-300 transform hover:scale-105 shadow-lg"
           >
             {isCapturing || isProcessing ? (
               <>

@@ -31,18 +31,11 @@ const Index = () => {
       setIsCapturing(true);
 
       const image = await Camera.getPhoto({
-        quality: 85, // Leicht niedriger für schnellere Verarbeitung
+        quality: 90,
         allowEditing: false,
         resultType: CameraResultType.Base64,
         source: CameraSource.Camera,
         correctOrientation: true,
-        presentationStyle: 'fullscreen',
-        saveToGallery: false,
-        width: 1920, // Konsistente Auflösung für schnellere OCR
-        height: 1080,
-        promptLabelHeader: 'Film Scanner',
-        promptLabelCancel: 'Abbrechen',
-        promptLabelPhoto: 'Foto aufnehmen',
       });
 
       if (image.base64String) {

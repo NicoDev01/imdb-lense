@@ -275,7 +275,7 @@ async function getDetailsWithImdbId(
 ): Promise<{ imdb_id?: string; external_ids?: { imdb_id?: string } }> {
   try {
     if (candidate.media_type === 'movie') {
-      const details = await tmdbFetch<{ imdb_id?: string; external_ids?: { imdb_id?: string } }>(`/movie/${candidate.id}`, {
+      const details = await tmdbFetch(`/movie/${candidate.id}`, {
         language,
         append_to_response: 'external_ids'
       });
@@ -287,7 +287,7 @@ async function getDetailsWithImdbId(
 
       return details;
     } else {
-      const details = await tmdbFetch<{ imdb_id?: string; external_ids?: { imdb_id?: string } }>(`/tv/${candidate.id}`, {
+      const details = await tmdbFetch(`/tv/${candidate.id}`, {
         language,
         append_to_response: 'external_ids'
       });
@@ -435,36 +435,11 @@ export async function getImdbIdForTitle(
           if (bestCandidate) {
             // Get details with IMDb ID based on media type
             const details = await getDetailsWithImdbId(bestCandidate, lang);
-            let imdbId = details.imdb_id ?? details.external_ids?.imdb_id ?? null;
-
-            // Fallback: Try to get external IDs separately if not found in details
-            if (!imdbId && bestCandidate.media_type === 'movie') {
-              try {
-                const externalIds = await getMovieExternalIds(bestCandidate.id);
-                imdbId = externalIds.imdb_id ?? null;
-                console.log('Fallback external IDs for movie:', bestCandidate.id, 'IMDb ID:', imdbId);
-              } catch (error) {
-                console.warn('Failed to get external IDs for movie:', bestCandidate.id, error);
-              }
-            }
-
-            // Additional fallback: Try English version if German failed
-            if (!imdbId && lang === 'de-DE') {
-              try {
-                console.log('Trying English fallback for:', bestCandidate.title);
-                const englishDetails = await getDetailsWithImdbId(bestCandidate, 'en-US');
-                imdbId = englishDetails.imdb_id ?? englishDetails.external_ids?.imdb_id ?? null;
-                console.log('English fallback result:', imdbId);
-              } catch (error) {
-                console.warn('English fallback failed:', error);
-              }
-            }
+            const imdbId = details.imdb_id ?? details.external_ids?.imdb_id ?? null;
 
             if (imdbId) {
               const matchScore = calculateCandidateScore(bestCandidate, normalizedTitle);
               const confidence = matchScore >= 80 ? 'high' : matchScore >= 40 ? 'medium' : 'low';
-
-              console.log('✅ Successfully found IMDb ID for:', bestCandidate.title, 'ID:', imdbId);
 
               return {
                 title: bestCandidate.title,
@@ -473,8 +448,6 @@ export async function getImdbIdForTitle(
                 confidence,
                 year: bestCandidate.date ? new Date(bestCandidate.date).getFullYear() : undefined
               };
-            } else {
-              console.warn('❌ No IMDb ID found for candidate:', bestCandidate.title, 'Details:', details);
             }
           }
         } catch (error) {

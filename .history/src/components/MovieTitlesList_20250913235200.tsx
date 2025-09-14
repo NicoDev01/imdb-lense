@@ -162,41 +162,22 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
       else if (tmdbTitle.includes(ocrNormalized) || tmdbOriginalTitle.includes(ocrNormalized)) {
         score = 90;
       }
-      // Strategy 3: TMDB title is contained in OCR title (more restrictive)
-      else if (ocrNormalized.includes(tmdbTitle) && tmdbTitle.length > 3) {
-        score = Math.max(60, 80 - Math.abs(ocrNormalized.length - tmdbTitle.length));
+      // Strategy 3: TMDB title is contained in OCR title
+      else if (ocrNormalized.includes(tmdbTitle) || ocrNormalized.includes(tmdbOriginalTitle)) {
+        score = 80;
       }
-      else if (ocrNormalized.includes(tmdbOriginalTitle) && tmdbOriginalTitle && tmdbOriginalTitle.length > 3) {
-        score = Math.max(60, 80 - Math.abs(ocrNormalized.length - tmdbOriginalTitle.length));
-      }
-      // Strategy 4: Word-level matching (stricter)
+      // Strategy 4: Word-level matching
       else {
-        const tmdbWords = tmdbTitle.split(/\s+/).filter(w => w.length > 2);
-        const tmdbOriginalWords = tmdbOriginalTitle ? tmdbOriginalTitle.split(/\s+/).filter(w => w.length > 2) : [];
+        const tmdbWords = tmdbTitle.split(/\s+/);
+        const tmdbOriginalWords = tmdbOriginalTitle.split(/\s+/);
 
         const commonWords = ocrWords.filter(word =>
-          tmdbWords.some(tmdbWord =>
-            tmdbWord.toLowerCase() === word.toLowerCase() || // Exact word match
-            (tmdbWord.length > 4 && word.length > 4 && (
-              tmdbWord.includes(word) || word.includes(tmdbWord)
-            ))
-          ) ||
-          tmdbOriginalWords.some(tmdbWord =>
-            tmdbWord.toLowerCase() === word.toLowerCase() || // Exact word match
-            (tmdbWord.length > 4 && word.length > 4 && (
-              tmdbWord.includes(word) || word.includes(tmdbWord)
-            ))
-          )
+          tmdbWords.some(tmdbWord => tmdbWord.includes(word) || word.includes(tmdbWord)) ||
+          tmdbOriginalWords.some(tmdbWord => tmdbWord.includes(word) || word.includes(tmdbWord))
         );
 
         const wordMatchRatio = commonWords.length / Math.max(ocrWords.length, 1);
-        score = wordMatchRatio * 60;
-
-        // Penalty for very different lengths
-        const lengthDiff = Math.abs(ocrNormalized.length - tmdbTitle.length);
-        if (lengthDiff > 10) {
-          score -= 20;
-        }
+        score = wordMatchRatio * 70;
       }
 
       // Boost score for exact word matches
@@ -205,13 +186,28 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
       ).length;
       score += exactWordMatches * 5;
 
+      // Debug logging for "Get Up" case
+      if (ocrTitle.toLowerCase().includes('get up') || tmdbTitle.includes('get up')) {
+        console.log('🎯 Matching debug for "Get Up":');
+        console.log('OCR Title:', ocrTitle);
+        console.log('TMDB Title:', candidate.title);
+        console.log('TMDB Original Title:', candidate.original_title);
+        console.log('Score:', score);
+        console.log('IMDb ID available:', !!candidate.imdbId);
+      }
+
       if (score > bestScore) {
         bestScore = score;
         bestMatch = candidate;
       }
     }
 
-    return bestScore >= 40 ? bestMatch : null; // Higher threshold to avoid false matches
+    // Debug logging for best match
+    if (ocrTitle.toLowerCase().includes('get up') && bestMatch) {
+      console.log('🏆 Best match for "Get Up":', bestMatch.title, 'Score:', bestScore);
+    }
+
+    return bestScore >= 25 ? bestMatch : null; // Lower threshold for better matching
   }, []);
 
   // useMemo für teure Film-Matching Berechnungen (außerhalb der map!)

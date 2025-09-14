@@ -205,10 +205,25 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
       ).length;
       score += exactWordMatches * 5;
 
+      // Debug logging for "Get Up" case
+      if (ocrTitle.toLowerCase().includes('get up') || tmdbTitle.includes('get up')) {
+        console.log('🎯 Matching debug for "Get Up":');
+        console.log('OCR Title:', ocrTitle);
+        console.log('TMDB Title:', candidate.title);
+        console.log('TMDB Original Title:', candidate.original_title);
+        console.log('Score:', score);
+        console.log('IMDb ID available:', !!candidate.imdbId);
+      }
+
       if (score > bestScore) {
         bestScore = score;
         bestMatch = candidate;
       }
+    }
+
+    // Debug logging for best match
+    if (ocrTitle.toLowerCase().includes('get up') && bestMatch) {
+      console.log('🏆 Best match for "Get Up":', bestMatch.title, 'Score:', bestScore);
     }
 
     return bestScore >= 40 ? bestMatch : null; // Higher threshold to avoid false matches

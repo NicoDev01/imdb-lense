@@ -143,67 +143,40 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
     if (!candidates || candidates.length === 0) return null;
 
     const ocrNormalized = ocrTitle.toLowerCase().trim();
-    const ocrWords = ocrNormalized.split(/\s+/).filter(word => word.length > 1);
 
     // Find best match using multiple strategies
     let bestMatch = null;
     let bestScore = 0;
 
     for (const candidate of candidates) {
-      const tmdbTitle = (candidate.title || '').toLowerCase().trim();
-      const tmdbOriginalTitle = (candidate.original_title || '').toLowerCase().trim();
+      const tmdbTitle = candidate.title?.toLowerCase().trim() || '';
       let score = 0;
 
-      // Strategy 1: Exact match with title or original title
-      if (tmdbTitle === ocrNormalized || tmdbOriginalTitle === ocrNormalized) {
+      // Strategy 1: OCR title is contained in TMDB title (most common case)
+      if (tmdbTitle.includes(ocrNormalized)) {
         score = 100;
       }
-      // Strategy 2: OCR title is contained in TMDB title
-      else if (tmdbTitle.includes(ocrNormalized) || tmdbOriginalTitle.includes(ocrNormalized)) {
-        score = 90;
+      // Strategy 2: TMDB title is contained in OCR title (less common)
+      else if (ocrNormalized.includes(tmdbTitle)) {
+        score = 80;
       }
-      // Strategy 3: TMDB title is contained in OCR title (more restrictive)
-      else if (ocrNormalized.includes(tmdbTitle) && tmdbTitle.length > 3) {
-        score = Math.max(60, 80 - Math.abs(ocrNormalized.length - tmdbTitle.length));
-      }
-      else if (ocrNormalized.includes(tmdbOriginalTitle) && tmdbOriginalTitle && tmdbOriginalTitle.length > 3) {
-        score = Math.max(60, 80 - Math.abs(ocrNormalized.length - tmdbOriginalTitle.length));
-      }
-      // Strategy 4: Word-level matching (stricter)
+      // Strategy 3: Fuzzy matching - count common words
       else {
-        const tmdbWords = tmdbTitle.split(/\s+/).filter(w => w.length > 2);
-        const tmdbOriginalWords = tmdbOriginalTitle ? tmdbOriginalTitle.split(/\s+/).filter(w => w.length > 2) : [];
-
+        const ocrWords = ocrNormalized.split(/\s+/);
+        const tmdbWords = tmdbTitle.split(/\s+/);
         const commonWords = ocrWords.filter(word =>
           tmdbWords.some(tmdbWord =>
-            tmdbWord.toLowerCase() === word.toLowerCase() || // Exact word match
-            (tmdbWord.length > 4 && word.length > 4 && (
-              tmdbWord.includes(word) || word.includes(tmdbWord)
-            ))
-          ) ||
-          tmdbOriginalWords.some(tmdbWord =>
-            tmdbWord.toLowerCase() === word.toLowerCase() || // Exact word match
-            (tmdbWord.length > 4 && word.length > 4 && (
-              tmdbWord.includes(word) || word.includes(tmdbWord)
-            ))
+            tmdbWord.includes(word) || word.includes(tmdbWord)
           )
         );
-
-        const wordMatchRatio = commonWords.length / Math.max(ocrWords.length, 1);
-        score = wordMatchRatio * 60;
-
-        // Penalty for very different lengths
-        const lengthDiff = Math.abs(ocrNormalized.length - tmdbTitle.length);
-        if (lengthDiff > 10) {
-          score -= 20;
-        }
+        score = (commonWords.length / Math.max(ocrWords.length, tmdbWords.length)) * 60;
       }
 
       // Boost score for exact word matches
-      const exactWordMatches = ocrWords.filter(word =>
-        tmdbTitle.includes(word) || tmdbOriginalTitle.includes(word)
+      const exactWordMatches = ocrNormalized.split(/\s+/).filter(word =>
+        tmdbTitle.includes(word)
       ).length;
-      score += exactWordMatches * 5;
+      score += exactWordMatches * 10;
 
       if (score > bestScore) {
         bestScore = score;
@@ -211,7 +184,7 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
       }
     }
 
-    return bestScore >= 40 ? bestMatch : null; // Higher threshold to avoid false matches
+    return bestScore >= 30 ? bestMatch : null; // Minimum threshold
   }, []);
 
   // useMemo für teure Film-Matching Berechnungen (außerhalb der map!)
@@ -251,7 +224,7 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
           case 'rating':
             const ratingA = ratingMatches[a]?.rating || 0;
             const ratingB = ratingMatches[b]?.rating || 0;
-            comparison = ratingB - ratingA; // Umgekehrte Subtraktion für korrekte Sortierung
+            comparison = ratingA - ratingB;
             break;
 
           case 'hasImdb':
