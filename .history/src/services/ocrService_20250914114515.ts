@@ -91,7 +91,7 @@ export const extractTextFromImage = async (imageUrl: string): Promise<string[]> 
     Achte besonders auf korrekte Erkennung von Umlauten und deutschen Buchstaben.
     Ignoriere alle anderen Texte wie Schauspielernamen, Regisseure, Genres, etc.
     Wenn mehrere Filme auf dem Bild sind, liste jeden Titel separat auf.
-    Antworte nur mit den Titeln, keine zusätzlichen Erklärungen.`;
+    Antworte nur mit den Titeln im angegebenen Format, keine zusätzlichen Erklärungen.`;
 
     // Prepare the image part
     const imagePart = {

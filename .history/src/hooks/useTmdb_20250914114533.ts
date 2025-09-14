@@ -1,6 +1,5 @@
 import { useQuery, useQueries } from '@tanstack/react-query';
 import { getImdbIdForTitle, getImdbIdsForTitles } from '@/services/tmdbService';
-import { extractYearFromTitle } from '@/services/ocrService';
 import type { MovieWithImdbId, TMDBSearchOptions } from '@/types/tmdb';
 
 // Hook for single title lookup
@@ -44,6 +43,7 @@ export const useBatchImdbIds = (
   const queries = useQueries({
     queries: titles.map(title => {
       // Extract year from title for better search accuracy
+      const { extractYearFromTitle } = require('@/services/ocrService');
       const { title: cleanTitle, year } = extractYearFromTitle(title);
 
       return {

@@ -83,15 +83,15 @@ export const extractTextFromImage = async (imageUrl: string): Promise<string[]> 
     console.log('Processing image with Gemini...');
 
     // Create the prompt for movie title extraction
-    const prompt = `Analysiere dieses Bild und extrahiere alle sichtbaren Filmtitel.
-    Gib jeden Filmtitel zurück, einen pro Zeile.
-    Wenn eine Jahreszahl direkt beim Filmtitel sichtbar ist, füge sie in Klammern hinzu (z.B. "Der Herr der Ringe (2001)").
-    Wenn KEINE Jahreszahl sichtbar ist, gib NUR den Titel ohne Klammern zurück.
+    const prompt = `Analysiere dieses Bild und extrahiere alle sichtbaren Filmtitel MIT Jahreszahlen.
+    Gib jeden Filmtitel mit seiner Jahreszahl zurück, einen pro Zeile.
+    Format: "Film Titel (Jahr)" - z.B. "Der Herr der Ringe (2001)"
     Behalte deutsche Umlaute und Sonderzeichen bei (ä, ö, ü, ß, etc.).
     Achte besonders auf korrekte Erkennung von Umlauten und deutschen Buchstaben.
+    Wenn keine Jahreszahl sichtbar ist, gib nur den Titel zurück.
     Ignoriere alle anderen Texte wie Schauspielernamen, Regisseure, Genres, etc.
     Wenn mehrere Filme auf dem Bild sind, liste jeden Titel separat auf.
-    Antworte nur mit den Titeln, keine zusätzlichen Erklärungen.`;
+    Antworte nur mit den Titeln im angegebenen Format, keine zusätzlichen Erklärungen.`;
 
     // Prepare the image part
     const imagePart = {
@@ -188,23 +188,14 @@ function parseGeminiResponse(response: string): string[] {
   return titles;
 }
 
-// Extract year from movie title
-export const extractYearFromTitle = (title: string): { title: string; year?: number } => {
-  const yearMatch = title.match(/\((\d{4})\)\s*$/);
-  if (yearMatch) {
-    const year = parseInt(yearMatch[1]);
-    const titleWithoutYear = title.replace(/\s*\(\d{4}\)\s*$/, '').trim();
-    return { title: titleWithoutYear, year };
-  }
-  return { title: title.trim() };
-};
-
 export const cleanMovieTitle = (title: string): string => {
-  // Clean up movie title text - BEHALT Jahreszahlen in Klammern!
+  // Clean up movie title text
   return title
-    // Remove unwanted characters but keep letters (including Umlaute), numbers, spaces, hyphens, colons, and parentheses
+    // Remove year in parentheses (e.g., "Movie (2025)" -> "Movie")
+    .replace(/\s*\(\d{4}\)\s*$/, '')
+    // Remove unwanted characters but keep letters (including Umlaute), numbers, spaces, hyphens, and colons
     // \p{L} matches any Unicode letter, \p{N} matches any Unicode number
-    .replace(/[^\p{L}\p{N}\s\-:\(\)]/gu, ' ')
+    .replace(/[^\p{L}\p{N}\s\-:]/gu, ' ')
     // Normalize whitespace
     .replace(/\s+/g, ' ')
     .trim();

@@ -83,15 +83,15 @@ export const extractTextFromImage = async (imageUrl: string): Promise<string[]> 
     console.log('Processing image with Gemini...');
 
     // Create the prompt for movie title extraction
-    const prompt = `Analysiere dieses Bild und extrahiere alle sichtbaren Filmtitel.
-    Gib jeden Filmtitel zurück, einen pro Zeile.
-    Wenn eine Jahreszahl direkt beim Filmtitel sichtbar ist, füge sie in Klammern hinzu (z.B. "Der Herr der Ringe (2001)").
-    Wenn KEINE Jahreszahl sichtbar ist, gib NUR den Titel ohne Klammern zurück.
+    const prompt = `Analysiere dieses Bild und extrahiere alle sichtbaren Filmtitel MIT Jahreszahlen.
+    Gib jeden Filmtitel mit seiner Jahreszahl zurück, einen pro Zeile.
+    Format: "Film Titel (Jahr)" - z.B. "Der Herr der Ringe (2001)"
     Behalte deutsche Umlaute und Sonderzeichen bei (ä, ö, ü, ß, etc.).
     Achte besonders auf korrekte Erkennung von Umlauten und deutschen Buchstaben.
+    Wenn keine Jahreszahl sichtbar ist, gib nur den Titel zurück.
     Ignoriere alle anderen Texte wie Schauspielernamen, Regisseure, Genres, etc.
     Wenn mehrere Filme auf dem Bild sind, liste jeden Titel separat auf.
-    Antworte nur mit den Titeln, keine zusätzlichen Erklärungen.`;
+    Antworte nur mit den Titeln im angegebenen Format, keine zusätzlichen Erklärungen.`;
 
     // Prepare the image part
     const imagePart = {

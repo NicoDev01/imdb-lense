@@ -502,37 +502,9 @@ export async function getImdbIdsForTitles(
   for (let i = 0; i < titles.length; i += batchSize) {
     const batch = titles.slice(i, i + batchSize);
 
-    const batchPromises = batch.map(async (title) => {
-      // Extract year from title if present (e.g., "Inception (2010)" -> title: "Inception", year: 2010)
-      const { title: cleanTitle, year } = extractYearFromTitle(title);
-
-      console.log('🔍 Processing title:', title, '-> Clean:', cleanTitle, 'Year:', year);
-
-      // Try search WITH year first
-      if (year) {
-        console.log('🎯 Trying search WITH year:', cleanTitle, year);
-        const resultWithYear = await getImdbIdForTitle(cleanTitle, { ...options, year });
-
-        if (resultWithYear) {
-          console.log('✅ Found with year:', resultWithYear.title);
-          return resultWithYear;
-        }
-
-        console.log('❌ No results with year, trying WITHOUT year...');
-      }
-
-      // Fallback: Search WITHOUT year
-      const resultWithoutYear = await getImdbIdForTitle(cleanTitle, options);
-      if (resultWithoutYear) {
-        console.log('✅ Found without year:', resultWithoutYear.title);
-      } else {
-        console.log('❌ No results found for:', cleanTitle);
-      }
-
-      return resultWithoutYear;
-    });
-
+    const batchPromises = batch.map(title => getImdbIdForTitle(title, options));
     const batchResults = await Promise.all(batchPromises);
+
     results.push(...batchResults.filter((result): result is MovieWithImdbId => result !== null));
 
     // Small delay between batches to be respectful to the API
@@ -542,15 +514,4 @@ export async function getImdbIdsForTitles(
   }
 
   return results;
-}
-
-// Extract year from movie title
-function extractYearFromTitle(title: string): { title: string; year?: number } {
-  const yearMatch = title.match(/\((\d{4})\)\s*$/);
-  if (yearMatch) {
-    const year = parseInt(yearMatch[1]);
-    const titleWithoutYear = title.replace(/\s*\(\d{4}\)\s*$/, '').trim();
-    return { title: titleWithoutYear, year };
-  }
-  return { title: title.trim() };
 }
