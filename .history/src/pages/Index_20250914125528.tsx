@@ -11,7 +11,6 @@ const Index = () => {
   const [isReady, setIsReady] = useState(false);
   const [movieTitles, setMovieTitles] = useState<string[]>([]);
   const [processedTitles, setProcessedTitles] = useState<Set<string>>(new Set());
-  const [movieData, setMovieData] = useState<any[]>([]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
@@ -116,11 +115,7 @@ const Index = () => {
       <div className="flex-1 overflow-hidden">
         <div className="h-full p-4 pb-20 overflow-y-auto">
           <div className="max-w-md mx-auto">
-            <MovieTitlesList
-              titles={movieTitles}
-              onClear={clearTitles}
-              processedTitles={processedTitles}
-            />
+            <MovieTitlesList titles={movieTitles} onClear={clearTitles} />
           </div>
         </div>
       </div>

@@ -11,7 +11,6 @@ const Index = () => {
   const [isReady, setIsReady] = useState(false);
   const [movieTitles, setMovieTitles] = useState<string[]>([]);
   const [processedTitles, setProcessedTitles] = useState<Set<string>>(new Set());
-  const [movieData, setMovieData] = useState<any[]>([]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();

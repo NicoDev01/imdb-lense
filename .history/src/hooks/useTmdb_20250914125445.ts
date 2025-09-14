@@ -42,15 +42,18 @@ export const useBatchImdbIds = (
   options: TMDBSearchOptions = {},
   processedTitles: Set<string> = new Set()
 ) => {
-  // Process ALL titles - React Query handles caching automatically
-  console.log('🎯 Processing ALL titles:', {
+  // Only process titles that haven't been processed yet
+  const newTitles = titles.filter(title => !processedTitles.has(title));
+
+  console.log('🎯 Processing new titles only:', {
     totalTitles: titles.length,
     processedTitles: processedTitles.size,
-    allTitles: titles
+    newTitles: newTitles.length,
+    newTitlesList: newTitles
   });
 
   const queries = useQueries({
-    queries: titles.map(title => {
+    queries: newTitles.map(title => {
       // Extract year from title for better search accuracy
       const { title: cleanTitle, year } = extractYearFromTitle(title);
 
@@ -63,8 +66,7 @@ export const useBatchImdbIds = (
             const resultWithYear = await getImdbIdForTitle(cleanTitle, { ...options, year });
             if (resultWithYear) {
               console.log('✅ Found with year:', resultWithYear.title);
-              // Return with original OCR title for matching
-              return { ...resultWithYear, ocrTitle: title };
+              return resultWithYear;
             }
             console.log('❌ No results with year, trying WITHOUT year...');
           }
@@ -73,12 +75,10 @@ export const useBatchImdbIds = (
           const resultWithoutYear = await getImdbIdForTitle(cleanTitle, options);
           if (resultWithoutYear) {
             console.log('✅ Found without year:', resultWithoutYear.title);
-            // Return with original OCR title for matching
-            return { ...resultWithoutYear, ocrTitle: title };
           } else {
             console.log('❌ No results found for:', cleanTitle);
           }
-          return null;
+          return resultWithoutYear;
         },
         enabled: !!cleanTitle?.trim(),
         staleTime: 1000 * 60 * 60, // 1 hour
@@ -95,33 +95,24 @@ export const useBatchImdbIds = (
   const isLoading = queries.some(query => query.isLoading);
   const isError = queries.some(query => query.isError);
   const errors = queries.map(query => query.error).filter(Boolean);
+  const newData = queries.map(query => query.data).filter(Boolean) as MovieWithImdbId[];
 
-  // Collect all successful data from queries
-  const newData = queries
-    .map(query => query.data)
-    .filter(data => data !== null && data !== undefined) as MovieWithImdbId[];
-
-  console.log('🔍 useBatchImdbIds results for ALL titles:', {
-    totalTitles: titles.length,
-    queriesCount: queries.length,
-    successfulQueries: queries.filter(q => q.data).length,
-    dataCount: newData.length,
+  console.log('🔍 useBatchImdbIds results for NEW titles:', {
+    newTitlesCount: newTitles.length,
+    newDataCount: newData.length,
     isLoading,
     isError,
-    data: newData.map(d => ({ title: d.title, imdbId: d.imdbId }))
+    newData: newData.map(d => ({ title: d.title, imdbId: d.imdbId }))
   });
 
-  // Return all processed data
   return {
-    data: newData, // All processed data
-    allTitles: titles, // All titles (for UI to know total count)
+    data: newData,
     isLoading,
     isError,
     errors,
     queries,
     processedTitlesCount: processedTitles.size,
-    totalTitlesCount: titles.length,
-    hasData: newData.length > 0
+    newTitlesCount: newTitles.length
   };
 };
 

@@ -61,17 +61,22 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
 
   // TMDB + OMDb integration for complete movie data - OPTIMIZED for new titles only
   const {
-    data: movieData,
+    data: newMovieData,
     allTitles,
     isLoading: isLoadingImdb,
     isError: hasImdbError,
-    totalTitlesCount,
-    hasData
+    newTitlesCount,
+    hasNewData
   } = useBatchImdbIds(
     titles,
     { language: 'de-DE', region: 'DE' },
     processedTitles
   );
+
+  // For now, just use new data - in a real app you'd combine with cached data
+  const movieData = useMemo(() => {
+    return newMovieData || [];
+  }, [newMovieData]);
 
   // OMDb ratings for movies with IMDb IDs
   const { data: ratingsData, isLoading: isLoadingRatings, isError: hasRatingsError } = useBatchImdbRatingsFromTitles(titles);
@@ -157,84 +162,86 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
     }
   }, [sortBy, sortOrder]);
 
-  // Create enhanced lookup that matches OCR titles to TMDB movies
-  const movieLookup = useMemo(() => {
-    const lookup: Record<string, any> = {};
+  // Simplified matching function that handles years properly
+  const findBestMatch = useCallback((ocrTitle: string, candidates: any[]) => {
+    if (!candidates || candidates.length === 0) return null;
 
-    if (movieData && movieData.length > 0) {
-      titles.forEach(ocrTitle => {
-        // Remove year from OCR title for better matching
-        const ocrClean = ocrTitle.replace(/\s*\(\d{4}\)\s*$/, '').toLowerCase().trim();
+    // Remove year from OCR title for better matching
+    const ocrWithoutYear = ocrTitle.replace(/\s*\(\d{4}\)\s*$/, '').toLowerCase().trim();
+    const ocrWords = ocrWithoutYear.split(/\s+/).filter(word => word.length > 2);
 
-        // Find best match in movieData
-        let bestMatch = null;
-        let bestScore = 0;
+    console.log('🔍 Matching:', ocrTitle, '-> cleaned:', ocrWithoutYear, 'words:', ocrWords);
 
-        for (const movie of movieData) {
-          if (!movie || !movie.title) continue;
+    let bestMatch = null;
+    let bestScore = 0;
 
-          const tmdbTitle = movie.title.toLowerCase().trim();
-          let score = 0;
+    for (const candidate of candidates) {
+      const tmdbTitle = (candidate.title || '').toLowerCase().trim();
+      const tmdbOriginalTitle = (candidate.original_title || '').toLowerCase().trim();
 
-          // Exact match
-          if (tmdbTitle === ocrClean) {
-            score = 100;
-          }
-          // Contains match
-          else if (tmdbTitle.includes(ocrClean) || ocrClean.includes(tmdbTitle)) {
-            score = 90;
-          }
-          // Partial word match
-          else {
-            const ocrWords = ocrClean.split(/\s+/);
-            const tmdbWords = tmdbTitle.split(/\s+/);
-            const commonWords = ocrWords.filter(word =>
-              tmdbWords.some(tmdbWord => tmdbWord.includes(word) || word.includes(tmdbWord))
-            );
-            if (commonWords.length > 0) {
-              score = (commonWords.length / Math.max(ocrWords.length, 1)) * 80;
-            }
-          }
+      let score = 0;
 
-          if (score > bestScore) {
-            bestScore = score;
-            bestMatch = movie;
-          }
+      // Strategy 1: Exact match after removing year
+      if (tmdbTitle === ocrWithoutYear || tmdbOriginalTitle === ocrWithoutYear) {
+        score = 100;
+        console.log('✅ Exact match found:', tmdbTitle);
+      }
+      // Strategy 2: TMDB title contains cleaned OCR title
+      else if (tmdbTitle.includes(ocrWithoutYear) || tmdbOriginalTitle.includes(ocrWithoutYear)) {
+        score = 90;
+        console.log('✅ Contains match:', tmdbTitle, 'contains', ocrWithoutYear);
+      }
+      // Strategy 3: Word-level matching
+      else {
+        const tmdbWords = tmdbTitle.split(/\s+/).filter(w => w.length > 2);
+        const commonWords = ocrWords.filter(word =>
+          tmdbWords.some(tmdbWord => tmdbWord.includes(word) || word.includes(tmdbWord))
+        );
+
+        if (commonWords.length > 0) {
+          const wordMatchRatio = commonWords.length / Math.max(ocrWords.length, 1);
+          score = wordMatchRatio * 80;
+          console.log('🔍 Word match:', tmdbTitle, '->', commonWords.length, '/', ocrWords.length, 'score:', score);
         }
+      }
 
-        if (bestMatch && bestScore >= 50) {
-          lookup[ocrTitle] = bestMatch;
-          console.log('✅ Matched:', ocrTitle, '->', bestMatch.title, '(score:', bestScore, ')');
-        } else {
-          console.log('❌ No match for:', ocrTitle, '(best score:', bestScore, ')');
-        }
-      });
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = candidate;
+      }
     }
 
-    console.log('📋 Enhanced movie lookup created:', {
-      lookupSize: Object.keys(lookup).length,
-      movieDataLength: movieData?.length || 0,
-      titlesCount: titles.length
+    const result = bestScore >= 50 ? bestMatch : null;
+    console.log('🎯 Final match result:', result ? result.title + ' (ID: ' + result.imdbId + ')' : 'NO MATCH', 'score:', bestScore);
+    return result;
+  }, []);
+
+  // useMemo für teure Film-Matching Berechnungen (außerhalb der map!)
+  const movieMatches = useMemo(() => {
+    const matches: Record<string, any> = {};
+    console.log('🎯 Building movie matches:', {
+      titlesCount: titles.length,
+      movieDataCount: movieData?.length || 0,
+      movieData: movieData?.map(m => ({ title: m.title, imdbId: m.imdbId }))
     });
 
-    return lookup;
-  }, [movieData, titles]);
+    titles.forEach(title => {
+      const match = findBestMatch(title, movieData || []);
+      console.log('🔍 Match result for:', title, '->', match ? match.title : 'NO MATCH');
+      matches[title] = match;
+    });
+    return matches;
+  }, [movieData, titles, findBestMatch]);
 
-  const ratingLookup = useMemo(() => {
-    const lookup: Record<string, any> = {};
-    if (ratingsData) {
-      ratingsData.forEach(rating => {
-        if (rating.imdbId) {
-          lookup[rating.imdbId] = rating; // Verwende IMDb-ID als Key!
-          console.log('⭐ Rating lookup:', rating.imdbId, '->', rating.rating);
-        }
-      });
-    }
-    console.log('⭐ Rating lookup created:', Object.keys(lookup));
-    return lookup;
-  }, [ratingsData]);
+  const ratingMatches = useMemo(() => {
+    const matches: Record<string, any> = {};
+    titles.forEach(title => {
+      matches[title] = findBestMatch(title, ratingsData || []);
+    });
+    return matches;
+  }, [ratingsData, titles, findBestMatch]);
 
-  // Gefilterte und sortierte Titel (nach den Lookups!)
+  // Gefilterte und sortierte Titel (nach den Matches!)
   const filteredAndSortedTitles = useMemo(() => {
     // Zuerst filtern nach Suchbegriff
     let filtered = titles.filter(title =>
@@ -252,16 +259,14 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
             break;
 
           case 'rating':
-            const movieInfoA = movieLookup[a];
-            const movieInfoB = movieLookup[b];
-            const ratingA = movieInfoA?.imdbId ? ratingLookup[movieInfoA.imdbId]?.rating || 0 : 0;
-            const ratingB = movieInfoB?.imdbId ? ratingLookup[movieInfoB.imdbId]?.rating || 0 : 0;
+            const ratingA = ratingMatches[a]?.rating || 0;
+            const ratingB = ratingMatches[b]?.rating || 0;
             comparison = ratingB - ratingA; // Umgekehrte Subtraktion für korrekte Sortierung
             break;
 
           case 'hasImdb':
-            const hasImdbA = !!movieLookup[a]?.imdbId;
-            const hasImdbB = !!movieLookup[b]?.imdbId;
+            const hasImdbA = !!movieMatches[a]?.imdbId;
+            const hasImdbB = !!movieMatches[b]?.imdbId;
             comparison = hasImdbA === hasImdbB ? 0 : hasImdbA ? -1 : 1;
             break;
         }
@@ -271,7 +276,7 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
     }
 
     return filtered;
-  }, [titles, deferredSearchTerm, sortBy, sortOrder, movieLookup, ratingLookup]);
+  }, [titles, deferredSearchTerm, sortBy, sortOrder, movieMatches, ratingMatches]);
 
   const getConfidenceColor = (confidence: 'high' | 'medium' | 'low') => {
     switch (confidence) {
@@ -420,8 +425,8 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
       {/* Film Liste - ultra-kompakt */}
       <div className="space-y-1">
         {filteredAndSortedTitles.map((title, index) => {
-          const movieInfo = movieLookup[title];
-          const ratingInfo = movieInfo?.imdbId ? ratingLookup[movieInfo.imdbId] : null;
+          const movieInfo = movieMatches[title];
+          const ratingInfo = ratingMatches[title];
           const isLoading = isLoadingImdb || isLoadingRatings;
 
           // Debug logging

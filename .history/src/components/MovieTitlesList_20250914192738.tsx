@@ -421,7 +421,7 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
       <div className="space-y-1">
         {filteredAndSortedTitles.map((title, index) => {
           const movieInfo = movieLookup[title];
-          const ratingInfo = movieInfo?.imdbId ? ratingLookup[movieInfo.imdbId] : null;
+          const ratingInfo = ratingLookup[title];
           const isLoading = isLoadingImdb || isLoadingRatings;
 
           // Debug logging

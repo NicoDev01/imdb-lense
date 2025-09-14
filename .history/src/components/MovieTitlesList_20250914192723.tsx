@@ -252,10 +252,8 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
             break;
 
           case 'rating':
-            const movieInfoA = movieLookup[a];
-            const movieInfoB = movieLookup[b];
-            const ratingA = movieInfoA?.imdbId ? ratingLookup[movieInfoA.imdbId]?.rating || 0 : 0;
-            const ratingB = movieInfoB?.imdbId ? ratingLookup[movieInfoB.imdbId]?.rating || 0 : 0;
+            const ratingA = ratingLookup[a]?.rating || 0;
+            const ratingB = ratingLookup[b]?.rating || 0;
             comparison = ratingB - ratingA; // Umgekehrte Subtraktion für korrekte Sortierung
             break;
 
@@ -421,7 +419,7 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
       <div className="space-y-1">
         {filteredAndSortedTitles.map((title, index) => {
           const movieInfo = movieLookup[title];
-          const ratingInfo = movieInfo?.imdbId ? ratingLookup[movieInfo.imdbId] : null;
+          const ratingInfo = ratingLookup[title];
           const isLoading = isLoadingImdb || isLoadingRatings;
 
           // Debug logging

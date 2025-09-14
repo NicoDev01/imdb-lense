@@ -50,7 +50,10 @@ export const useBatchImdbIds = (
   });
 
   const queries = useQueries({
-    queries: titles.map(title => {
+  });
+
+  const queries = useQueries({
+    queries: newTitles.map(title => {
       // Extract year from title for better search accuracy
       const { title: cleanTitle, year } = extractYearFromTitle(title);
 
@@ -101,27 +104,27 @@ export const useBatchImdbIds = (
     .map(query => query.data)
     .filter(data => data !== null && data !== undefined) as MovieWithImdbId[];
 
-  console.log('🔍 useBatchImdbIds results for ALL titles:', {
-    totalTitles: titles.length,
+  console.log('🔍 useBatchImdbIds results for NEW titles:', {
+    newTitlesCount: newTitles.length,
     queriesCount: queries.length,
     successfulQueries: queries.filter(q => q.data).length,
-    dataCount: newData.length,
+    newDataCount: newData.length,
     isLoading,
     isError,
-    data: newData.map(d => ({ title: d.title, imdbId: d.imdbId }))
+    newData: newData.map(d => ({ title: d.title, imdbId: d.imdbId }))
   });
 
-  // Return all processed data
+  // Return both new data and information about what was processed
   return {
-    data: newData, // All processed data
+    data: newData, // Only new data for this batch
     allTitles: titles, // All titles (for UI to know total count)
     isLoading,
     isError,
     errors,
     queries,
     processedTitlesCount: processedTitles.size,
-    totalTitlesCount: titles.length,
-    hasData: newData.length > 0
+    newTitlesCount: newTitles.length,
+    hasNewData: newData.length > 0
   };
 };
 

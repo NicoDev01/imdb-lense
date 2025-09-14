@@ -42,15 +42,18 @@ export const useBatchImdbIds = (
   options: TMDBSearchOptions = {},
   processedTitles: Set<string> = new Set()
 ) => {
-  // Process ALL titles - React Query handles caching automatically
-  console.log('🎯 Processing ALL titles:', {
+  // Only process titles that haven't been processed yet
+  const newTitles = titles.filter(title => !processedTitles.has(title));
+
+  console.log('🎯 Processing new titles only:', {
     totalTitles: titles.length,
     processedTitles: processedTitles.size,
-    allTitles: titles
+    newTitles: newTitles.length,
+    newTitlesList: newTitles
   });
 
   const queries = useQueries({
-    queries: titles.map(title => {
+    queries: newTitles.map(title => {
       // Extract year from title for better search accuracy
       const { title: cleanTitle, year } = extractYearFromTitle(title);
 
@@ -95,33 +98,27 @@ export const useBatchImdbIds = (
   const isLoading = queries.some(query => query.isLoading);
   const isError = queries.some(query => query.isError);
   const errors = queries.map(query => query.error).filter(Boolean);
+  const newData = queries.map(query => query.data).filter(Boolean) as (MovieWithImdbId & { ocrTitle: string })[];
 
-  // Collect all successful data from queries
-  const newData = queries
-    .map(query => query.data)
-    .filter(data => data !== null && data !== undefined) as MovieWithImdbId[];
-
-  console.log('🔍 useBatchImdbIds results for ALL titles:', {
-    totalTitles: titles.length,
-    queriesCount: queries.length,
-    successfulQueries: queries.filter(q => q.data).length,
-    dataCount: newData.length,
+  console.log('🔍 useBatchImdbIds results for NEW titles:', {
+    newTitlesCount: newTitles.length,
+    newDataCount: newData.length,
     isLoading,
     isError,
-    data: newData.map(d => ({ title: d.title, imdbId: d.imdbId }))
+    newData: newData.map(d => ({ title: d.title, imdbId: d.imdbId, ocrTitle: d.ocrTitle }))
   });
 
-  // Return all processed data
+  // Return both new data and information about what was processed
   return {
-    data: newData, // All processed data
+    data: newData, // Only new data for this batch
     allTitles: titles, // All titles (for UI to know total count)
     isLoading,
     isError,
     errors,
     queries,
     processedTitlesCount: processedTitles.size,
-    totalTitlesCount: titles.length,
-    hasData: newData.length > 0
+    newTitlesCount: newTitles.length,
+    hasNewData: newData.length > 0
   };
 };
 

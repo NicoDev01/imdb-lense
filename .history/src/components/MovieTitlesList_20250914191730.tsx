@@ -65,8 +65,8 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
     allTitles,
     isLoading: isLoadingImdb,
     isError: hasImdbError,
-    totalTitlesCount,
-    hasData
+    newTitlesCount,
+    hasNewData
   } = useBatchImdbIds(
     titles,
     { language: 'de-DE', region: 'DE' },
@@ -157,80 +157,36 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
     }
   }, [sortBy, sortOrder]);
 
-  // Create enhanced lookup that matches OCR titles to TMDB movies
+  // Create a simple lookup map for movie data by title
   const movieLookup = useMemo(() => {
     const lookup: Record<string, any> = {};
-
     if (movieData && movieData.length > 0) {
-      titles.forEach(ocrTitle => {
-        // Remove year from OCR title for better matching
-        const ocrClean = ocrTitle.replace(/\s*\(\d{4}\)\s*$/, '').toLowerCase().trim();
-
-        // Find best match in movieData
-        let bestMatch = null;
-        let bestScore = 0;
-
-        for (const movie of movieData) {
-          if (!movie || !movie.title) continue;
-
-          const tmdbTitle = movie.title.toLowerCase().trim();
-          let score = 0;
-
-          // Exact match
-          if (tmdbTitle === ocrClean) {
-            score = 100;
-          }
-          // Contains match
-          else if (tmdbTitle.includes(ocrClean) || ocrClean.includes(tmdbTitle)) {
-            score = 90;
-          }
-          // Partial word match
-          else {
-            const ocrWords = ocrClean.split(/\s+/);
-            const tmdbWords = tmdbTitle.split(/\s+/);
-            const commonWords = ocrWords.filter(word =>
-              tmdbWords.some(tmdbWord => tmdbWord.includes(word) || word.includes(tmdbWord))
-            );
-            if (commonWords.length > 0) {
-              score = (commonWords.length / Math.max(ocrWords.length, 1)) * 80;
-            }
-          }
-
-          if (score > bestScore) {
-            bestScore = score;
-            bestMatch = movie;
-          }
-        }
-
-        if (bestMatch && bestScore >= 50) {
-          lookup[ocrTitle] = bestMatch;
-          console.log('✅ Matched:', ocrTitle, '->', bestMatch.title, '(score:', bestScore, ')');
-        } else {
-          console.log('❌ No match for:', ocrTitle, '(best score:', bestScore, ')');
+      movieData.forEach(movie => {
+        if (movie && movie.title) {
+          // Use the original OCR title if available, otherwise the TMDB title
+          const lookupKey = movie.ocrTitle || movie.title;
+          lookup[lookupKey] = movie;
+          console.log('🔗 Added to lookup:', lookupKey, '->', movie.imdbId);
         }
       });
     }
-
-    console.log('📋 Enhanced movie lookup created:', {
+    console.log('📋 Movie lookup created:', {
       lookupSize: Object.keys(lookup).length,
       movieDataLength: movieData?.length || 0,
-      titlesCount: titles.length
+      lookupKeys: Object.keys(lookup)
     });
-
     return lookup;
-  }, [movieData, titles]);
+  }, [movieData]);
 
   const ratingLookup = useMemo(() => {
     const lookup: Record<string, any> = {};
     if (ratingsData) {
       ratingsData.forEach(rating => {
-        if (rating.imdbId) {
-          lookup[rating.imdbId] = rating; // Verwende IMDb-ID als Key!
-          console.log('⭐ Rating lookup:', rating.imdbId, '->', rating.rating);
+        if (rating.title) {
+          lookup[rating.title] = rating;
         }
       });
     }
-    console.log('⭐ Rating lookup created:', Object.keys(lookup));
     return lookup;
   }, [ratingsData]);
 
@@ -252,10 +208,8 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
             break;
 
           case 'rating':
-            const movieInfoA = movieLookup[a];
-            const movieInfoB = movieLookup[b];
-            const ratingA = movieInfoA?.imdbId ? ratingLookup[movieInfoA.imdbId]?.rating || 0 : 0;
-            const ratingB = movieInfoB?.imdbId ? ratingLookup[movieInfoB.imdbId]?.rating || 0 : 0;
+            const ratingA = ratingLookup[a]?.rating || 0;
+            const ratingB = ratingLookup[b]?.rating || 0;
             comparison = ratingB - ratingA; // Umgekehrte Subtraktion für korrekte Sortierung
             break;
 
@@ -421,7 +375,7 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
       <div className="space-y-1">
         {filteredAndSortedTitles.map((title, index) => {
           const movieInfo = movieLookup[title];
-          const ratingInfo = movieInfo?.imdbId ? ratingLookup[movieInfo.imdbId] : null;
+          const ratingInfo = ratingLookup[title];
           const isLoading = isLoadingImdb || isLoadingRatings;
 
           // Debug logging
