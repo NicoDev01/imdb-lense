@@ -34,6 +34,16 @@ async function omdbFetch<T>(
     const response = await fetch(url.toString());
 
     if (!response.ok) {
+      // Handle specific HTTP status codes
+      if (response.status === 503) {
+        throw new Error('OMDb Service Unavailable (503). Die API ist vorübergehend nicht erreichbar.');
+      }
+      if (response.status === 429) {
+        throw new Error('OMDb Rate Limit erreicht (429). Zu viele Anfragen.');
+      }
+      if (response.status >= 500) {
+        throw new Error(`OMDb Server Error (${response.status}). Bitte später versuchen.`);
+      }
       throw new Error(`OMDb API Error: ${response.status}`);
     }
 

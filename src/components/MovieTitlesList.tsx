@@ -413,7 +413,14 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
       {/* Error Banner - kompakter */}
       {(hasImdbError || hasRatingsError) && (
         <div className="mb-3 p-2 rounded bg-destructive/5 border border-destructive/20">
-          <p className="text-xs text-destructive">Verbindungsfehler</p>
+          <p className="text-xs text-destructive">
+            {hasImdbError && hasRatingsError
+              ? 'TMDB & OMDb APIs nicht verfügbar'
+              : hasImdbError
+                ? 'TMDB API nicht verfügbar - IMDb-Links funktionieren nicht'
+                : 'OMDb API nicht verfügbar - Bewertungen können nicht geladen werden'
+            }
+          </p>
         </div>
       )}
 
