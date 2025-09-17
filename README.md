@@ -1,18 +1,20 @@
 # 🎬 Film Scanner - Movie Title Recognition App
 
-**Film Scanner** ist eine moderne Progressive Web App (PWA), die Filmtitel von Netflix und anderen Streaming-Plattformen mittels KI-gestützter Texterkennung (OCR) erkennt und mit IMDb-Daten anreichert.
+**Film Scanner** ist eine moderne Progressive Web App (PWA), die Filmtitel von Netflix und anderen Streaming-Plattformen mittels KI-gestützter Texterkennung erkennt und mit IMDb-Daten anreichert. Das System verwendet Google Gemini AI für hochpräzise OCR-Erkennung und bietet eine vollständige Integration mit TMDB und OMDb APIs.
 
 [![React](https://img.shields.io/badge/React-18.3.1-blue.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue.svg)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.4.19-646CFF.svg)](https://vitejs.dev/)
 [![Capacitor](https://img.shields.io/badge/Capacitor-7.4.3-blue.svg)](https://capacitorjs.com/)
+[![Gemini AI](https://img.shields.io/badge/Gemini-2.5--flash--lite-blue.svg)](https://ai.google.dev/)
 
 ## ✨ Features
 
 ### 🎯 Kernfunktionalität
-- **KI-gestützte OCR**: Automatische Texterkennung aus Filmcovern mittels TrOCR (Microsoft)
-- **Intelligente Titel-Matching**: TMDB API für präzise Filmdaten-Abgleiche
-- **IMDb-Rating Integration**: OMDb API für Bewertungen und Vote-Counts
+- **KI-gestützte OCR**: Hochpräzise und sehr schnelle Texterkennung mittels Google Gemini 2.5 Flash Lite
+- **Intelligente Titel-Matching**: Erweiterte Matching-Strategie mit Confidence-Scoring
+- **IMDb-Rating Integration**: Vollständige OMDb API Integration mit Ratings & Votes
+- **Direkte IMDb-Links**: Ein-Klick Navigation zu IMDb-Seiten
 - **Erweiterte Suche & Filter**: Debounced Live-Suche mit useDeferredValue
 - **Intelligente Sortierung**: Nach Titel, Rating oder IMDb-Verfügbarkeit
 - **Pull-to-Refresh**: Manuelle Daten-Aktualisierung mit Query-Invalidierung
@@ -30,7 +32,6 @@
 ### 🔧 Technische Features
 - **Performance-optimiert**: React.memo, useCallback, useMemo für optimale Re-renders
 - **Progressive Web App**: Installierbar als native App
-- **WebGPU-Unterstützung**: Hardware-beschleunigte ML-Inferenz
 - **Batch-Verarbeitung**: Effiziente API-Nutzung mit Rate-Limiting
 - **Error Recovery**: Robuste Fehlerbehandlung und Fallbacks
 - **Advanced Caching**: React Query mit intelligenten Stale-Times
@@ -49,9 +50,9 @@
 - **PWA Elements** für native Kamera-Funktionalität im Web
 
 ### KI & ML
-- **Hugging Face Transformers.js** für Client-Side ML
-- **TrOCR (Microsoft)** für hochpräzise Texterkennung
-- **ONNX Runtime** für optimierte Modell-Ausführung
+- **Gemini 2.5 Flash Lite** für optimale Performance und Genauigkeit
+- **Intelligente Textverarbeitung** mit Umlaut-Erkennung und Bereinigung
+- **Advanced Matching Algorithmus** für OCR-Titel zu TMDB-Filmen
 
 ### APIs & Daten
 - **TMDB API** für Filmdaten und IMDb-ID Matching
@@ -60,8 +61,6 @@
 
 ### Entwicklung & Qualität
 - **ESLint + Prettier** für Code-Qualität
-- **Vitest** für Unit-Tests (zukünftig)
-- **Playwright** für E2E-Tests (zukünftig)
 
 ## 🏗️ Architektur
 
@@ -91,10 +90,10 @@ src/
 ### Datenfluss
 ```
 1. OCR Pipeline:
-   Bild → TrOCR → Rohtext → Textbereinigung → Titel
+   Bild → Google Gemini AI → Rohtext → Textbereinigung → Titel
 
 2. TMDB Pipeline:
-   Titel → TMDB Search → Best Match → IMDb-ID + Metadaten
+   Titel → Enhanced Matching → TMDB Search → Best Match → IMDb-ID + Metadaten
 
 3. OMDb Pipeline:
    IMDb-ID → OMDb Lookup → Rating + Votes
@@ -103,71 +102,102 @@ src/
    Alle Daten → React Query → Optimierte UI-Updates
 ```
 
-## 📋 Voraussetzungen
-
-- **Node.js** 18+ ([nvm](https://github.com/nvm-sh/nvm#installing-and-updating) empfohlen)
-- **npm** oder **bun** Package Manager
-- **WebGPU-kompatibler Browser** (Chrome 113+, Edge 113+) für optimale Performance
-- **HTTPS** für Kamera-Zugriff (development server läuft automatisch mit HTTPS)
-
-## 🛠️ Installation & Setup
-
-### 1. Repository klonen
-```bash
-git clone https://github.com/NicoDev01/cover-to-title-scanner.git
-cd imdb-lense
+```mermaid
+flowchart TD
+    %% User Layer
+    subgraph "👤 User Interface"
+        A[📱 Film Scanner App]
+        B[📷 Camera Capture]
+        C[🎨 MovieTitlesList UI]
+        D[⭐ Ratings Display]
+        E[🔗 IMDb Links]
+    end
+    
+    %% Frontend Processing
+    subgraph "⚛️ Frontend Processing"
+        F[📝 Image to Base64]
+        G[🤖 OCR Service Call]
+        H[🎬 TMDB API Call]
+        I[⭐ OMDB API Call]
+        J[🔄 React Query Cache]
+    end
+    
+    %% Backend Services
+    subgraph "🔧 Backend Services"
+        K[🌟 Google Gemini AI<br/>2.5 Flash Lite]
+        L[🎬 TMDB API<br/>Movie Database]
+        M[⭐ OMDB API<br/>Ratings Database]
+    end
+    
+    %% Data Flow
+    A --> B
+    B --> F
+    F --> G
+    G --> K
+    
+    K --> |OCR Results<br/>Movie Titles| H
+    H --> L
+    
+    L --> |Movie Data<br/>IMDb IDs| I
+    I --> M
+    
+    M --> |Ratings<br/>Vote Counts| J
+    J --> C
+    
+    C --> D
+    C --> E
+    
+    %% OCR Process Details
+    G --> N[📋 Text Extraction<br/>• Image Analysis<br/>• OCR Recognition<br/>• Title Cleaning]
+    K --> N
+    
+    %% TMDB Process Details
+    H --> O[🔍 Movie Search<br/>• Title Matching<br/>• Year Filtering<br/>• IMDb ID Lookup]
+    L --> O
+    
+    %% OMDB Process Details
+    I --> P[📊 Rating Fetch<br/>• IMDb ID Input<br/>• Rating Extraction<br/>• Vote Count Parse]
+    M --> P
+    
+    %% UI Process Details
+    J --> Q[🎯 Data Integration<br/>• Title Matching<br/>• Cache Management<br/>• Error Handling]
+    Q --> C
+    
+    %% User Interactions
+    D --> R[👆 User Actions<br/>• Copy Ratings<br/>• View Details<br/>• Refresh Data]
+    E --> S[🔗 External Links<br/>• Open IMDb<br/>• New Tab<br/>• Direct Navigation]
+    
+    %% Styling
+    style A fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    style B fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
+    style C fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style D fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    style E fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    style F fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    style G fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
+    style H fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    style I fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    style J fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style K fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    style L fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
+    style M fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    style N fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    style O fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    style P fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    style Q fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
+    style R fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    style S fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
 ```
-
-### 2. Dependencies installieren
-```bash
-npm install
-# oder
-bun install
-```
-
-### 3. Environment Variables konfigurieren
-```bash
-# .env Datei erstellen
-cp .env.example .env
-```
-
-Inhalt der `.env` Datei:
-```env
-VITE_TMDB_API_KEY=your_tmdb_api_key_here
-VITE_OMDB_API_KEY=your_omdb_api_key_here
-```
-
-### 4. API-Keys beschaffen
-
-#### TMDB API Key
-1. [TMDB Account](https://www.themoviedb.org/account/signup) erstellen
-2. [API Settings](https://www.themoviedb.org/settings/api) aufrufen
-3. "Request API Key" für Developer Access
-4. API Key aus "API Key (v3 auth)" kopieren
-
-#### OMDb API Key
-1. [OMDb API](https://www.omdbapi.com/apikey.aspx) besuchen
-2. Kostenlosen API Key anfordern
-3. Key aus E-Mail kopieren
-
-### 5. Development Server starten
-```bash
-npm run dev
-# oder
-bun run dev
-```
-
-Die App ist verfügbar unter `https://localhost:8080`
 
 ## 📱 Verwendung
 
 ### Grundlegende Bedienung
 
 1. **App öffnen**: Film Scanner im Browser oder als PWA starten
-2. **OCR-Modell laden**: Warten bis das TrOCR-Modell initialisiert ist
+2. **Gemini AI initialisieren**: Warten bis Google Gemini AI bereit ist
 3. **Foto aufnehmen**: "Foto aufnehmen" Button drücken
 4. **Kamera verwenden**: Filmcover fotografieren
-5. **Ergebnisse ansehen**: Erkannte Titel werden automatisch angezeigt
+5. **Ergebnisse ansehen**: Erkannte Titel werden automatisch mit IMDb-Daten angereichert
 
 ### Ansichtsmodi
 
@@ -266,10 +296,6 @@ npx cap open android
 
 ## ⚡ Performance & Optimierung
 
-### WebGPU-Unterstützung
-- Automatische Fallback-Kette: WebGPU → WASM → CPU
-- Hardware-beschleunigte ML-Inferenz für bessere Performance
-
 ### Caching-Strategien
 - **React Query**: 1h Cache für API-Responses
 - **Service Worker**: Modell-Dateien und Assets cachen
@@ -315,53 +341,8 @@ npm run dev -- --mode development
 npm run build -- --mode analyze
 ```
 
-## 🤝 Contributing
-
-### Development Setup
-1. Fork das Repository
-2. Feature Branch erstellen: `git checkout -b feature/amazing-feature`
-3. Änderungen committen: `git commit -m 'Add amazing feature'`
-4. Branch pushen: `git push origin feature/amazing-feature`
-5. Pull Request erstellen
-
 ### Code Style
 - **TypeScript Strict Mode** aktiv
 - **ESLint + Prettier** für Code-Qualität
 - **Conventional Commits** für Commit Messages
 - **Component Story Format** für UI-Komponenten
-
-### Testing
-```bash
-# Unit Tests (zukünftig)
-npm run test
-
-# E2E Tests (zukünftig)
-npm run test:e2e
-
-# Build Tests
-npm run build
-```
-
-## 📄 Lizenz
-
-Dieses Projekt ist unter der MIT License lizenziert - siehe [LICENSE](LICENSE) Datei für Details.
-
-## 🙏 Acknowledgments
-
-- **Microsoft** für TrOCR Modell
-- **Hugging Face** für Transformers.js
-- **The Movie Database (TMDB)** für Filmdaten
-- **OMDb** für IMDb-Integration
-- **shadcn/ui** für UI-Komponenten
-- **Capacitor** für Mobile-Unterstützung
-
-## 📞 Support
-
-Bei Fragen oder Problemen:
-1. [Issues](https://github.com/NicoDev01/cover-to-title-scanner/issues) auf GitHub erstellen
-2. [Discussions](https://github.com/NicoDev01/cover-to-title-scanner/discussions) für allgemeine Fragen
-3. E-Mail an maintainer@project.com
-
----
-
-**Entwickelt mit ❤️ für Film-Enthusiasten**
