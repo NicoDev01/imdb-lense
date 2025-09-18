@@ -7,7 +7,7 @@ import { Film, Copy, Trash2, ExternalLink, Loader2, Star, Search, RefreshCw, Arr
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { useBatchImdbIds } from '@/hooks/useTmdb';
-import { useBatchImdbRatingsFromTitles } from '@/hooks/useOmdb';
+import { useBatchImdbRatings } from '@/hooks/useOmdb';
 import type { MovieWithImdbId } from '@/types/tmdb';
 
 interface MovieTitlesListProps {
@@ -59,22 +59,24 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
   // Debounced search mit useDeferredValue
   const deferredSearchTerm = useDeferredValue(searchTerm);
 
-  // TMDB + OMDb integration for complete movie data - OPTIMIZED for new titles only
+  // Step 1: Fetch TMDB data (IMDb IDs, etc.) for all OCR'd titles
   const {
     data: movieData,
-    allTitles,
     isLoading: isLoadingImdb,
     isError: hasImdbError,
-    totalTitlesCount,
-    hasData
   } = useBatchImdbIds(
     titles,
     { language: 'de-DE', region: 'DE' },
     processedTitles
   );
 
-  // OMDb ratings for movies with IMDb IDs
-  const { data: ratingsData, isLoading: isLoadingRatings, isError: hasRatingsError } = useBatchImdbRatingsFromTitles(titles);
+  // Step 2: Fetch OMDb ratings for movies that have an IMDb ID from TMDB
+  // This hook now takes the result from the TMDB hook as input
+  const {
+    data: ratingLookup, // The hook now returns a map directly
+    isLoading: isLoadingRatings,
+    isError: hasRatingsError
+  } = useBatchImdbRatings(movieData);
 
   // Stable callbacks with useCallback
   const copyToClipboard = useCallback(async (text: string, description: string) => {
@@ -112,17 +114,27 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
   }, [movieData, copyToClipboard]);
 
   const copyAllRatings = useCallback(async () => {
-    if (!ratingsData || ratingsData.length === 0) return;
+    if (!movieData || !ratingLookup) return;
 
-    const ratings = ratingsData
-      .map(movie => movie.rating ? `${movie.title}: ${movie.rating}/10` : null)
-      .filter(rating => rating !== null)
+    const ratingsText = movieData
+      .map(movie => {
+        if (movie.imdbId) {
+          const ratingInfo = ratingLookup[movie.imdbId];
+          if (ratingInfo && ratingInfo.rating) {
+            return `${movie.title}: ${ratingInfo.rating}/10`;
+          }
+        }
+        return null;
+      })
+      .filter(text => text !== null)
       .join('\n');
 
-    if (ratings) {
-      await copyToClipboard(ratings, `${ratingsData.length} Bewertungen wurden in die Zwischenablage kopiert`);
+    const count = ratingsText.split('\n').filter(Boolean).length;
+
+    if (ratingsText) {
+      await copyToClipboard(ratingsText, `${count} Bewertungen wurden in die Zwischenablage kopiert`);
     }
-  }, [ratingsData, copyToClipboard]);
+  }, [movieData, ratingLookup, copyToClipboard]);
 
   const openImdbPage = useCallback((imdbId: string) => {
     window.open(`https://www.imdb.com/title/${imdbId}`, '_blank');
@@ -220,19 +232,7 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
     return lookup;
   }, [movieData, titles]);
 
-  const ratingLookup = useMemo(() => {
-    const lookup: Record<string, any> = {};
-    if (ratingsData) {
-      ratingsData.forEach(rating => {
-        if (rating.imdbId) {
-          lookup[rating.imdbId] = rating; // Verwende IMDb-ID als Key!
-          console.log('⭐ Rating lookup:', rating.imdbId, '->', rating.rating);
-        }
-      });
-    }
-    console.log('⭐ Rating lookup created:', Object.keys(lookup));
-    return lookup;
-  }, [ratingsData]);
+  // The ratingLookup is now directly the output of our new hook, so the old useMemo is no longer needed.
 
   // Gefilterte und sortierte Titel (nach den Lookups!)
   const filteredAndSortedTitles = useMemo(() => {
