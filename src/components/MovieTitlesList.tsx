@@ -39,24 +39,16 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
   });
 
   // Aggregate loading and error states from all queries
-  const isLoading = movieQueries.some(q => q.isLoading);
   const isError = movieQueries.some(q => q.isError);
 
-  // Extract successful data and create a lookup map in one go
-  const { movieLookup, allMovieData } = useMemo(() => {
-    const successfulData = movieQueries
-      .filter(q => q.isSuccess && q.data)
-      .map(q => q.data);
+  // Correctly extract successful data and create a lookup map WITHOUT faulty useMemo
+  const allMovieData = movieQueries
+    .filter(q => q.isSuccess && q.data)
+    .map(q => q.data!);
 
-    const movieLookup: Record<string, any> = {};
-    successfulData.forEach(data => {
-      if (data) {
-        movieLookup[data.ocrTitle] = data;
-      }
-    });
-
-    return { movieLookup, allMovieData: successfulData };
-  }, [movieQueries]);
+  const movieLookup: Record<string, any> = Object.fromEntries(
+    allMovieData.map(data => [data.ocrTitle, data])
+  );
 
   // Stable callbacks with useCallback
   const copyToClipboard = useCallback(async (text: string, description: string) => {
@@ -74,9 +66,10 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
   }, [titles, copyToClipboard]);
 
   const copyAllImdbIds = useCallback(async () => {
-    const imdbIds = allMovieData.map(movie => movie.imdbId).filter(id => !!id).join('\n');
-    if (imdbIds) {
-      await copyToClipboard(imdbIds, `${allMovieData.filter(m => !!m.imdbId).length} IMDb-IDs wurden in die Zwischenablage kopiert`);
+    const moviesWithImdbId = allMovieData.filter(movie => !!movie.imdbId);
+    if (moviesWithImdbId.length > 0) {
+      const imdbIds = moviesWithImdbId.map(movie => movie.imdbId).join('\n');
+      await copyToClipboard(imdbIds, `${moviesWithImdbId.length} IMDb-IDs wurden in die Zwischenablage kopiert`);
     }
   }, [allMovieData, copyToClipboard]);
 
@@ -98,7 +91,10 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
 
   const handleRefresh = useCallback(async () => {
     toast({ title: 'Aktualisiere...', description: 'Daten werden neu geladen' });
-    await queryClient.invalidateQueries({ queryKey: ['movieData'] });
+    // Correctly invalidate queries using a predicate to match all movieData queries
+    await queryClient.invalidateQueries({ 
+      predicate: (query) => query.queryKey[0] === 'movieData'
+    });
     toast({ title: 'Aktualisiert!', description: 'Alle Daten wurden neu geladen' });
   }, [queryClient, toast]);
   
@@ -164,6 +160,10 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
       </div>
 
       <div className="mb-3 flex justify-end gap-1">
+        <Button variant="outline" size="sm" onClick={handleRefresh} className="h-7 px-2 text-xs">
+          <RefreshCw className="w-3 h-3 mr-1" />
+          Aktualisieren
+        </Button>
         <Button variant="outline" size="sm" onClick={() => toggleSort('rating')} className="h-7 px-2 text-xs">
           <Star className="w-3 h-3 mr-1" />
           {sortBy === 'rating' ? 'Sortierung aufheben' : 'Nach Rating sortieren'}
@@ -177,9 +177,10 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
       )}
 
       <div className="space-y-1">
-        {filteredAndSortedTitles.map((title) => {
+        {filteredAndSortedTitles.map((title, index) => {
           const movieInfo = movieLookup[title];
-          const query = movieQueries.find(q => q.data?.ocrTitle === title);
+          // Correctly find the query by its index to get the loading state
+          const query = movieQueries[index];
           const isTitleLoading = query?.isLoading ?? false;
 
           return (

@@ -1,6 +1,5 @@
-import { useQuery, useQueries } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { getImdbIdForTitle, getImdbIdsForTitles } from '@/services/tmdbService';
-import { extractYearFromTitle } from '@/services/ocrService';
 import type { MovieWithImdbId, TMDBSearchOptions } from '@/types/tmdb';
 
 // Hook for single title lookup
