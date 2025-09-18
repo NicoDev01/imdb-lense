@@ -91,13 +91,13 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
 
   const handleRefresh = useCallback(async () => {
     toast({ title: 'Aktualisiere...', description: 'Daten werden neu geladen' });
-    // Correctly invalidate queries using a predicate to match all movieData queries
-    await queryClient.invalidateQueries({ 
-      predicate: (query) => query.queryKey[0] === 'movieData'
-    });
+    // Invalidate all relevant queries for a complete hard refresh
+    await queryClient.invalidateQueries({ queryKey: ['movieData'] });
+    await queryClient.invalidateQueries({ queryKey: ['tmdb'] });
+    await queryClient.invalidateQueries({ queryKey: ['omdb'] });
     toast({ title: 'Aktualisiert!', description: 'Alle Daten wurden neu geladen' });
   }, [queryClient, toast]);
-  
+
   const toggleSort = useCallback((newSortBy: 'title' | 'rating' | 'hasImdb') => {
     if (sortBy === newSortBy) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -177,10 +177,10 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
       )}
 
       <div className="space-y-1">
-        {filteredAndSortedTitles.map((title, index) => {
+        {filteredAndSortedTitles.map((title) => {
           const movieInfo = movieLookup[title];
-          // Correctly find the query by its index to get the loading state
-          const query = movieQueries[index];
+          // Find the query by title to ensure the correct loading state is always shown
+          const query = movieQueries.find(q => q.queryKey[1] === title);
           const isTitleLoading = query?.isLoading ?? false;
 
           return (
