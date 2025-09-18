@@ -92,12 +92,12 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
   const handleRefresh = useCallback(async () => {
     toast({ title: 'Aktualisiere...', description: 'Daten werden neu geladen' });
     // Correctly invalidate queries using a predicate to match all movieData queries
-    await queryClient.invalidateQueries({
+    await queryClient.invalidateQueries({ 
       predicate: (query) => query.queryKey[0] === 'movieData'
     });
     toast({ title: 'Aktualisiert!', description: 'Alle Daten wurden neu geladen' });
   }, [queryClient, toast]);
-
+  
   const toggleSort = useCallback((newSortBy: 'title' | 'rating' | 'hasImdb') => {
     if (sortBy === newSortBy) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');

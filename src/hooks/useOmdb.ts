@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueries } from '@tanstack/react-query';
 import { getImdbRatingByImdbId, getImdbRatingsForIds } from '@/services/omdbService';
 import type { MovieRating } from '@/types/omdb';
+import type { MovieWithImdbId } from '@/types/tmdb';
 
 // Hook for single IMDb rating lookup
 export const useImdbRating = (
@@ -86,4 +87,3 @@ export const useImdbRatingFromTitle = (
     hasData: !!(imdbData && ratingData)
   };
 };
-
