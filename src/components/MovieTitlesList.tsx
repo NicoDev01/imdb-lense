@@ -180,7 +180,7 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
         {filteredAndSortedTitles.map((title) => {
           const movieInfo = movieLookup[title];
           // Find the query by title to ensure the correct loading state is always shown
-          const query = movieQueries.find(q => q.queryKey[1] === title);
+          const query = movieQueries.find(q => q && q.queryKey && q.queryKey[1] === title);
           const isTitleLoading = query?.isLoading ?? false;
 
           return (
