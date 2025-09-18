@@ -101,7 +101,7 @@ export const MovieTitlesList = React.memo<MovieTitlesListProps>(function MovieTi
     await queryClient.invalidateQueries({ queryKey: ['movieData'] });
     toast({ title: 'Aktualisiert!', description: 'Alle Daten wurden neu geladen' });
   }, [queryClient, toast]);
-
+  
   const toggleSort = useCallback((newSortBy: 'title' | 'rating' | 'hasImdb') => {
     if (sortBy === newSortBy) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
