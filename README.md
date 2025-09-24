@@ -1,6 +1,6 @@
 # 🎬 Film Scanner - Movie Title Recognition App
 
-**Film Scanner** ist eine moderne Progressive Web App (PWA), die Filmtitel von Netflix und anderen Streaming-Plattformen mittels KI-gestützter Texterkennung erkennt und mit IMDb-Daten anreichert. Das System verwendet Google Gemini AI für hochpräzise OCR-Erkennung und bietet eine vollständige Integration mit TMDB und OMDb APIs.
+**Film Scanner** ist eine  Web App, die Filmtitel von Netflix und anderen Streaming-Plattformen mittels KI-gestützter Texterkennung erkennt und mit IMDb-Daten anreichert. Das System verwendet Google Gemini AI für hochpräzise OCR-Erkennung und bietet eine vollständige Integration mit TMDB und OMDb APIs.
 
 [![React](https://img.shields.io/badge/React-18.3.1-blue.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-blue.svg)](https://www.typescriptlang.org/)
@@ -31,7 +31,6 @@
 
 ### 🔧 Technische Features
 - **Performance-optimiert**: React.memo, useCallback, useMemo für optimale Re-renders
-- **Progressive Web App**: Installierbar als native App
 - **Batch-Verarbeitung**: Effiziente API-Nutzung mit Rate-Limiting
 - **Error Recovery**: Robuste Fehlerbehandlung und Fallbacks
 - **Advanced Caching**: React Query mit intelligenten Stale-Times
@@ -45,14 +44,9 @@
 - **Tailwind CSS** für Utility-First Styling
 - **shadcn/ui** für konsistente UI-Komponenten
 
-### Mobile & Native
-- **Capacitor** für Cross-Platform Mobile Apps (iOS/Android)
-- **PWA Elements** für native Kamera-Funktionalität im Web
-
 ### KI & ML
 - **Gemini 2.5 Flash Lite** für optimale Performance und Genauigkeit
 - **Intelligente Textverarbeitung** mit Umlaut-Erkennung und Bereinigung
-- **Advanced Matching Algorithmus** für OCR-Titel zu TMDB-Filmen
 
 ### APIs & Daten
 - **TMDB API** für Filmdaten und IMDb-ID Matching
@@ -199,44 +193,6 @@ flowchart TD
 4. **Kamera verwenden**: Filmcover fotografieren
 5. **Ergebnisse ansehen**: Erkannte Titel werden automatisch mit IMDb-Daten angereichert
 
-### Ansichtsmodi
-
-#### 📋 Titel-Modus (Standard)
-- Reine Liste der erkannten Filmtitel
-- Einfaches Copy-Paste für alle Titel
-
-#### 🎯 IMDb-Modus
-- Titel mit zugehörigen IMDb-IDs
-- Confidence-Indikatoren für Matching-Qualität
-- Direkte Links zu IMDb-Seiten
-- Copy-Funktionen für einzelne oder alle IDs
-
-#### ⭐ Bewertungs-Modus
-- Titel mit IMDb-Rating (1-10 Sterne)
-- Vote-Counts für Popularitätsindikator
-- Direkte Links zu IMDb-Seiten
-- Copy-Funktionen für Bewertungen
-
-### Mobile Nutzung
-
-#### Als Web-App
-1. Browser öffnen und zu `https://localhost:8080` navigieren
-2. "Installieren" Button im Browser-Menü klicken
-3. App wird als native App installiert
-
-#### Als Native App (Capacitor)
-```bash
-# iOS
-npm run build
-npx cap add ios
-npx cap open ios
-
-# Android
-npm run build
-npx cap add android
-npx cap open android
-```
-
 ## 🔧 API-Integrationen
 
 ### TMDB (The Movie Database)
@@ -260,89 +216,3 @@ API-Keys werden über Environment Variables konfiguriert:
 VITE_TMDB_API_KEY=your_tmdb_key
 VITE_OMDB_API_KEY=your_omdb_key
 ```
-
-## 🚀 Deployment
-
-### Web Deployment (Vercel/Netlify)
-
-```bash
-# Build für Production
-npm run build
-
-# Deploy auf Vercel
-npm i -g vercel
-vercel
-
-# Deploy auf Netlify
-npm i -g netlify-cli
-netlify deploy --prod --dir=dist
-```
-
-### Mobile Apps
-
-```bash
-# iOS Build
-npm run build
-npx cap add ios
-npx cap open ios
-# In Xcode: Product → Archive → Distribute App
-
-# Android Build
-npm run build
-npx cap add android
-npx cap open android
-# In Android Studio: Build → Generate Signed Bundle/APK
-```
-
-## ⚡ Performance & Optimierung
-
-### Caching-Strategien
-- **React Query**: 1h Cache für API-Responses
-- **Service Worker**: Modell-Dateien und Assets cachen
-- **Local Storage**: Benutzereinstellungen persistieren
-
-### Bundle-Optimierung
-- **Code Splitting**: Lazy Loading für schwere Komponenten
-- **Tree Shaking**: Automatische Entfernung ungenutzten Codes
-- **Compression**: Gzip/Brotli für optimale Ladezeiten
-
-## 🔍 Troubleshooting
-
-### Häufige Probleme
-
-#### ❌ CORS-Fehler bei OMDb
-**Problem**: `Request header field content-type is not allowed`
-**Lösung**: OMDb braucht keine HTTP-Header - nur API-Key als Query-Parameter
-
-#### ❌ ONNX Runtime Warnungen
-**Problem**: `Some nodes were not assigned to the preferred execution providers`
-**Lösung**: Normale Performance-Optimierung - kann ignoriert werden
-
-#### ❌ Kamera funktioniert nicht
-**Problem**: `Unable to load PWA Element 'pwa-camera-modal'`
-**Lösung**: PWA Elements Script in `index.html` hinzufügen:
-```html
-<script src="https://unpkg.com/@ionic/pwa-elements@latest/dist/ionicpwaelements.js"></script>
-```
-
-#### ❌ API-Keys funktionieren nicht
-**Problem**: 401 Unauthorized Fehler
-**Lösung**:
-- TMDB: Developer API Key verwenden (nicht Read Access Token)
-- OMDb: Korrekten API Key aus E-Mail verwenden
-
-### Debug-Modi
-
-```bash
-# Verbose Logging aktivieren
-npm run dev -- --mode development
-
-# Production Build analysieren
-npm run build -- --mode analyze
-```
-
-### Code Style
-- **TypeScript Strict Mode** aktiv
-- **ESLint + Prettier** für Code-Qualität
-- **Conventional Commits** für Commit Messages
-- **Component Story Format** für UI-Komponenten

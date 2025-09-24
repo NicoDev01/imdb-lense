@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueries } from '@tanstack/react-query';
 import { getImdbRatingByImdbId, getImdbRatingsForIds } from '@/services/omdbService';
 import type { MovieRating } from '@/types/omdb';
+import type { MovieWithImdbId } from '@/types/tmdb';
 
 // Hook for single IMDb rating lookup
 export const useImdbRating = (
@@ -84,50 +85,5 @@ export const useImdbRatingFromTitle = (
     isLoading: isLoadingImdb || isLoadingRating,
     isError: hasImdbError || hasRatingError,
     hasData: !!(imdbData && ratingData)
-  };
-};
-
-// Hook for batch processing: Multiple titles → IMDb IDs → Ratings
-export const useBatchImdbRatingsFromTitles = (
-  titles: string[]
-) => {
-  // First: Get all IMDb IDs
-  const { data: imdbData, isLoading: isLoadingImdb, isError: hasImdbError } = useQuery({
-    queryKey: ['tmdb', 'batchImdbIds', titles],
-    queryFn: async () => {
-      const { getImdbIdsForTitles } = await import('@/services/tmdbService');
-      return getImdbIdsForTitles(titles, { language: 'de-DE', region: 'DE' });
-    },
-    enabled: titles.length > 0,
-    staleTime: 1000 * 60 * 30, // 30 minutes
-  });
-
-  // Extract valid IMDb IDs
-  const validImdbIds = imdbData?.map(item => item.imdbId).filter((id): id is string => id !== null) ?? [];
-
-  // Second: Get ratings for all valid IMDb IDs
-  const { data: ratingsData, isLoading: isLoadingRatings, isError: hasRatingsError } = useQuery({
-    queryKey: ['omdb', 'batchRatings', validImdbIds],
-    queryFn: () => getImdbRatingsForIds(validImdbIds),
-    enabled: validImdbIds.length > 0,
-    staleTime: 1000 * 60 * 30, // 30 minutes
-  });
-
-  // Combine TMDB and OMDb data
-  const combinedData = imdbData?.map(imdbItem => {
-    const ratingItem = ratingsData?.find(rating => rating.imdbId === imdbItem.imdbId);
-    return {
-      ...imdbItem,
-      rating: ratingItem?.rating ?? null,
-      votes: ratingItem?.votes ?? null
-    };
-  }) ?? [];
-
-  return {
-    data: combinedData,
-    isLoading: isLoadingImdb || isLoadingRatings,
-    isError: hasImdbError || hasRatingsError,
-    imdbQuery: { data: imdbData, isLoading: isLoadingImdb, isError: hasImdbError },
-    ratingsQuery: { data: ratingsData, isLoading: isLoadingRatings, isError: hasRatingsError }
   };
 };
